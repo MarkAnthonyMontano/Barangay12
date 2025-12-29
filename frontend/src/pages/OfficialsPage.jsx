@@ -53,7 +53,7 @@ const PAGE_ACCESS = [
   { key: 'calendarpage', label: 'Events Calendar' },
   { key: 'settings', label: 'Barangay Profile' },
   { key: 'requestpanel', label: 'Request Panel' },
-  { key: 'auditpage', label: 'History Logs'},
+  { key: 'auditpage', label: 'History Logs' },
   { key: 'adminsecuritysettings', label: 'Settings' },
   { key: 'residentidcard', label: 'Resident ID Card' },
 ];
@@ -417,7 +417,7 @@ const OfficialsPage = () => {
     } catch (err) {
       console.error('Error creating user', err);
       setAccessError(err.response?.data?.message || 'Error creating account');
-      
+
     } finally {
       setSavingAccess(false);
     }
@@ -472,7 +472,7 @@ const OfficialsPage = () => {
   };
 
   return (
-      <Box sx={{ p: 1, pr: 4, height: "calc(100vh - 150px)", overflowY: "auto" }}>
+    <Box sx={{ p: 1, pr: 4, height: "calc(100vh - 150px)", overflowY: "auto" }}>
       {/* PAGE TITLE */}
       <Box sx={{ mb: 2 }}>
         <Typography variant="h4" sx={{ fontWeight: "bold", fontFamily: "times new roman", fontSize: "36px" }}>
@@ -527,37 +527,54 @@ const OfficialsPage = () => {
           {/* BUTTON SPACE (UX PRESERVED, SPACE CONTROLLED) */}
           <Box
             sx={{
-              height: 65, // ✅ space ONLY for button
-              display: "flex",
-              alignItems: "center",
               px: 2,
+              mt: 2,
+             
               borderBottom: "2px solid black",
             }}
           >
-            <Button
-              variant="contained"
-              startIcon={<EditIcon />}
-              onClick={openAddDialog}
+            {/* Label */}
+        
+            {/* Buttons container */}
+            <Box
               sx={{
-                borderRadius: 2,
-                px: 2.5,
-                py: 1,
-                mt: 3,
-                mb: 3,
-                height: "55px",
-                width: "223px"
+                height: 65, // space only for buttons
+                display: "flex",
+                alignItems: "center",
               }}
             >
-              Add Official
-            </Button>
-            <Button
-              variant="contained"
-              sx={{ backgroundColor: "#9E0000", width: "223px", height: "55px", ml: 1 }}
-              onClick={openGrantAccessDialog}
-            >
-              Grant Access
-            </Button>
+              <Button
+                variant="contained"
+                startIcon={<EditIcon />}
+                onClick={openAddDialog}
+                sx={{
+                
+                  px: 2.5,
+                   mb: 2,
+                  py: 1,
+                  height: "55px",
+                  width: "223px",
+                }}
+              >
+                Add Official
+              </Button>
+
+              <Button
+                variant="contained"
+                sx={{
+                  backgroundColor: "#9E0000",
+                  width: "223px",
+                  height: "55px",
+                  ml: 1,
+                   mb: 2,
+                }}
+                onClick={openGrantAccessDialog}
+              >
+                Grant Access
+              </Button>
+            </Box>
           </Box>
+
 
           {/* TABLE */}
           <Table>
@@ -857,14 +874,14 @@ const OfficialsPage = () => {
         onClose={() => setAccessDialogOpen(false)}
         maxWidth="sm"
         fullWidth
-       
+
       >
         <DialogTitle sx={{ fontWeight: 700, textAlign: 'center' }}>
           Grant System Access
         </DialogTitle>
 
         <DialogContent dividers>
-          <Grid  container spacing={2} sx={{ mt: 1,  }}>
+          <Grid container spacing={2} sx={{ mt: 1, }}>
 
             {/* Select Official */}
             <Grid item xs={12}>
@@ -872,7 +889,7 @@ const OfficialsPage = () => {
                 select
                 label="Select Official"
                 name="official_id"
-                sx={{width: "223px", height: "55px"}}
+                sx={{ width: "223px", height: "55px" }}
                 value={accessForm.official_id}
                 onChange={handleAccessChange}
                 fullWidth
@@ -891,7 +908,7 @@ const OfficialsPage = () => {
               <TextField
                 label="Full Name"
                 name="full_name"
-                 sx={{width: "223px", height: "55px"}}
+                sx={{ width: "223px", height: "55px" }}
                 value={accessForm.full_name}
                 onChange={handleAccessChange}
                 fullWidth
@@ -903,7 +920,7 @@ const OfficialsPage = () => {
               <TextField
                 label="Username"
                 name="username"
-                 sx={{width: "223px", height: "55px"}}
+                sx={{ width: "223px", height: "55px" }}
                 value={accessForm.username}
                 onChange={handleAccessChange}
                 fullWidth
@@ -917,7 +934,7 @@ const OfficialsPage = () => {
                 label="Password"
                 type={showPassword ? 'text' : 'password'}
                 name="password"
-                 sx={{width: "223px", height: "55px"}}
+                sx={{ width: "223px", height: "55px" }}
                 value={accessForm.password}
                 onChange={handleAccessChange}
                 fullWidth
@@ -937,7 +954,7 @@ const OfficialsPage = () => {
                 label="Confirm Password"
                 type={showConfirmPassword ? 'text' : 'password'}
                 name="confirm_password"
-                 sx={{width: "223px", height: "55px"}}
+                sx={{ width: "223px", height: "55px" }}
                 value={accessForm.confirm_password}
                 onChange={handleAccessChange}
                 fullWidth
@@ -958,7 +975,7 @@ const OfficialsPage = () => {
                 select
                 label="Role"
                 name="role"
-                 sx={{width: "223px", height: "55px"}}
+                sx={{ width: "223px", height: "55px" }}
                 value={accessForm.role}
                 onChange={handleAccessChange}
                 fullWidth
@@ -1078,7 +1095,7 @@ const OfficialsPage = () => {
               <TextField
                 select
                 label="Role"
-                sx={{width: "150px"}}
+                sx={{ width: "150px" }}
                 value={editAccessForm.role}
                 onChange={(e) =>
                   setEditAccessForm(p => ({

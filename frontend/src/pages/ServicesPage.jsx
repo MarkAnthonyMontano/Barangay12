@@ -32,8 +32,9 @@ import BagongPilipinas from "../assets/BagongPilipinas.png";
 import Barangay369 from "../assets/Barangay369.jpg";
 import LungsodngManila from "../assets/LungsodngManila.jpg";
 import api from '../api';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+
 import * as XLSX from 'xlsx';
 import API_BASE_URL from '../ApiConfig';
 
@@ -494,73 +495,118 @@ const ServicesPage = () => {
     return `${r.last_name}, ${r.first_name}`;
   };
 
-  // Export: PDF
+  const incomeLabel = (val) => {
+    switch (Number(val)) {
+      case 0: return "Less than 5000";
+      case 1: return "5000 to 10000";
+      case 2: return "10000 to 20000";
+      case 3: return "20000 to 30000";
+      case 4: return "30000 to 40000";
+      case 5: return "40000 to 50000";
+      case 6: return "More than 50000";
+      default: return "";
+    }
+  };
+
+
   const handleExportPdf = () => {
-    if (!selectedService) {
-      alert('Select a service first.');
+    if (!selectedService || beneficiaries.length === 0) {
+      alert("No beneficiaries to export.");
       return;
     }
-    const doc = new jsPDF();
+
+    const doc = new jsPDF({ orientation: "landscape" });
 
     doc.setFontSize(14);
-    doc.text('Barangay Service Report', 14, 18);
-    doc.setFontSize(11);
-    doc.text(`Service: ${selectedService.service_name}`, 14, 28);
-    doc.text(
-      `Date: ${selectedService.service_date
-        ? formatDate(selectedService.service_date)
-        : ''
-      }`,
-      14,
-      34
-    );
-    doc.text(`Location: ${selectedService.location || ''}`, 14, 40);
-    doc.text(`Description:`, 14, 46);
-    const description = selectedService.description || '';
-    const splitDesc = doc.splitTextToSize(description, 180);
-    doc.text(splitDesc, 14, 52);
-
-    const startY = 52 + splitDesc.length * 6 + 4;
-
-    const body = beneficiaries.map((b, idx) => [
-      idx + 1,
-      `${b.last_name}, ${b.first_name}`,
-      b.notes || '',
-    ]);
-
-    doc.autoTable({
-      head: [['#', 'Name', 'Notes']],
-      body,
-      startY,
-      styles: { fontSize: 9 },
-      headStyles: { fillColor: [41, 128, 185] },
+    doc.text("Barangay Service Beneficiaries", doc.internal.pageSize.width / 2, 15, {
+      align: "center",
+    });
+    doc.setFontSize(10);
+    doc.text(`Service: ${selectedService.service_name}`, doc.internal.pageSize.width / 2, 22, {
+      align: "center",
     });
 
-    doc.save(
-      `service_${selectedService.id}_${selectedService.service_name || 'report'
-      }.pdf`
-    );
+    const body = beneficiaries.map((b, i) => [
+      i + 1,
+      b.fullname,
+      b.address,
+      b.age,
+      b.birthdate,
+      b.civil_status,
+      b.work,
+      incomeLabel(b.monthly_income),
+      b.contact_no,
+      Number(b.is_voters) === 1 ? "Yes" : "No",
+      b.notes || "",
+    ]);
+
+    autoTable(doc, {
+      startY: 28,
+      head: [[
+        "#",
+        "Name",
+        "Address",
+        "Age",
+        "Date Of Birth",
+        "Civil Status",
+        "Work",
+        "Monthly Income Exceeding",
+        "Contact Number",
+        "Registered Voter",
+        "Notes",
+      ]],
+      body,
+      styles: {
+        fontSize: 8,
+        halign: "center",
+        valign: "middle",
+        lineWidth: 0.5,
+        lineColor: [0, 0, 0], // black border
+      },
+      headStyles: {
+        fillColor: [25, 118, 210],
+        textColor: [255, 255, 255],
+        fontStyle: "bold",
+        halign: "center",
+        lineWidth: 0.5,
+        lineColor: [0, 0, 0], // black border for header
+      },
+    });
+
+    doc.save(`service_${selectedService.id}_beneficiaries.pdf`);
   };
 
   // Export: Excel
   const handleExportExcel = () => {
-    if (!selectedService) {
-      alert('Select a service first.');
+    if (!selectedService || beneficiaries.length === 0) {
+      alert("No beneficiaries to export.");
       return;
     }
-    const data = beneficiaries.map((b, idx) => ({
-      '#': idx + 1,
-      'Last Name': b.last_name,
-      'First Name': b.first_name,
-      Notes: b.notes || '',
+
+    const data = beneficiaries.map((b, i) => ({
+      "#": i + 1,
+      Name: b.fullname,
+      Address: b.address,
+      Age: b.age,
+      "Date Of Birth": b.birthdate,
+      "Civil Status": b.civil_status,
+      Work: b.work,
+      "Monthly Income Exceeding": incomeLabel(b.monthly_income),
+      "Contact Number": b.contact_no,
+      "Registered Voter": Number(b.is_voters) === 1 ? "Yes" : "No",
+      Notes: b.notes || "",
     }));
 
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Beneficiaries');
-    const fileName = `service_${selectedService.id}_beneficiaries.xlsx`;
-    XLSX.writeFile(wb, fileName);
+
+    XLSX.utils.book_append_sheet(wb, ws, "Beneficiaries");
+    XLSX.writeFile(
+      wb,
+      `service_${selectedService.id}_beneficiaries.xlsx`
+    );
   };
+
 
   const [myRole, setMyRole] = useState("");
   const [myData, setMyData] = useState(null);
@@ -983,9 +1029,7 @@ const ServicesPage = () => {
                     sx={{
                       backgroundColor: "#2e7d32", // green
                       color: "white",
-                      "&:hover": {
-                        backgroundColor: "#1b5e20",
-                      },
+                      height: "55px", width: "223px", ml: 2,
                     }}
                     onClick={openAddBeneficiaryDialog}
                     disabled={myRole === "User"}
@@ -997,14 +1041,11 @@ const ServicesPage = () => {
                     variant="contained"
                     size="small"
                     sx={{
-                      backgroundColor: "#1565c0", // blue
                       color: "white",
-                      "&:hover": {
-                        backgroundColor: "#0d47a1",
-                      },
+                      height: "55px", width: "223px", ml: 2,
                     }}
                     onClick={handleExportPdf}
-                    disabled={beneficiaries.length === 0 || myRole === 'User'}
+                    disabled={beneficiaries.length === 0}
                   >
                     Export PDF
                   </Button>
@@ -1013,17 +1054,15 @@ const ServicesPage = () => {
                     variant="contained"
                     size="small"
                     sx={{
-                      backgroundColor: "#6a1b9a", // purple
                       color: "white",
-                      "&:hover": {
-                        backgroundColor: "#4a148c",
-                      },
+                      height: "55px", width: "223px", ml: 2,
                     }}
                     onClick={handleExportExcel}
-                    disabled={beneficiaries.length === 0 || myRole === 'User'}
+                    disabled={beneficiaries.length === 0}
                   >
                     Export Excel
                   </Button>
+
 
 
                 </Box>

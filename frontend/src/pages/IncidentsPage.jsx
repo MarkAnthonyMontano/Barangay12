@@ -30,6 +30,10 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SearchIcon from '@mui/icons-material/Search';
 import api from '../api';
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
+import * as XLSX from "xlsx";
+
 
 const INCIDENT_TYPES = [
   'Complaint',
@@ -203,6 +207,78 @@ const IncidentsPage = () => {
     setEditData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleExportIncidentsPDF = () => {
+    if (filteredIncidents.length === 0) {
+      alert("No incidents to export");
+      return;
+    }
+
+    const doc = new jsPDF({ orientation: "landscape" });
+
+    doc.setFontSize(14);
+    doc.text("Incident Reports / Blotter", doc.internal.pageSize.width / 2, 15, {
+      align: "center",
+    });
+
+    const body = filteredIncidents.map((i, index) => [
+      index + 1,
+      formatDateTime(i.incident_date),
+      i.incident_type,
+      i.location || "",
+      residentName(i.complainant_id),
+      residentName(i.respondent_id),
+      i.status,
+    ]);
+
+    autoTable(doc, {
+      startY: 25,
+      head: [["#", "Date/Time", "Type", "Location", "Complainant", "Respondent", "Status"]],
+      body,
+      styles: {
+        halign: "center",
+        valign: "middle",
+        fontSize: 10,
+        lineWidth: 0.5,
+        lineColor: [0, 0, 0], // black border
+      },
+      headStyles: {
+        fillColor: [25, 118, 210],
+        textColor: [255, 255, 255],
+        fontStyle: "bold",
+        halign: "center",
+        lineWidth: 0.5,
+        lineColor: [0, 0, 0], // black border for header
+      },
+    });
+
+    doc.save("incidents.pdf");
+  };
+
+
+  const handleExportIncidentsExcel = () => {
+    if (filteredIncidents.length === 0) {
+      alert("No incidents to export");
+      return;
+    }
+
+    const data = filteredIncidents.map((i, index) => ({
+      "#": index + 1,
+      "Date/Time": formatDateTime(i.incident_date),
+      "Type": i.incident_type,
+      "Location": i.location || "",
+      "Complainant": residentName(i.complainant_id),
+      "Respondent": residentName(i.respondent_id),
+      "Status": i.status,
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Incidents");
+
+    XLSX.writeFile(wb, "incidents.xlsx");
+  };
+
+
   const handleEditSave = async () => {
     setErrorEdit('');
     if (!editData.incident_date || !editData.incident_type) {
@@ -297,7 +373,7 @@ const IncidentsPage = () => {
   };
 
   return (
-      <Box sx={{ p: 1, pr: 4, height: "calc(100vh - 150px)", overflowY: "auto" }}>
+    <Box sx={{ p: 1, pr: 4, height: "calc(100vh - 150px)", overflowY: "auto" }}>
       {/* PAGE TITLE */}
       <Box sx={{ mb: 2 }}>
         <Typography variant="h4" sx={{ fontWeight: "bold", fontFamily: "times new roman", fontSize: "36px" }}>
@@ -474,8 +550,17 @@ const IncidentsPage = () => {
             )}
 
             <Grid item xs={12}>
-              <Button sx={{height: "55px", width: "223px"}}type="submit" variant="contained" disabled={saving || myRole === 'User'}>
+              <Button sx={{ height: "55px", width: "223px" }} type="submit" variant="contained" disabled={saving || myRole === 'User'}>
                 {saving ? 'Saving...' : 'Save Incident'}
+              </Button>
+
+              <Button sx={{ height: "55px", width: "223px", ml: 2 }} variant="contained"
+                color="secondary" onClick={handleExportIncidentsPDF}>
+                Export PDF
+              </Button>
+
+              <Button sx={{ height: "55px", width: "223px", ml: 2 }} variant="contained" color="success" onClick={handleExportIncidentsExcel}>
+                Export Excel
               </Button>
             </Grid>
           </Grid>

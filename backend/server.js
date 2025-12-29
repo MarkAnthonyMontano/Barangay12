@@ -960,6 +960,72 @@ app.post("/api/request-id", verifyToken, async (req, res) => {
   }
 });
 
+// BULK IMPORT RESIDENTS (OPTIONAL FIELDS)
+app.post("/api/residents/bulk", verifyToken, async (req, res) => {
+  try {
+    const residents = req.body;
+
+    if (!Array.isArray(residents) || residents.length === 0) {
+      return res.status(400).json({ message: "No residents data received" });
+    }
+
+    for (const r of residents) {
+      await pool.query(
+        `INSERT INTO residents (
+          profile_picture,
+          last_name,
+          first_name,
+          middle_name,
+          suffix,
+          sex,
+          age,
+          birthdate,
+          civil_status,
+          work,
+          monthly_income,
+          contact_no,
+          purok,
+          address,
+          is_voters,
+          precint_no,
+          fullname_emergency,
+          contact_no_emergency,
+          status
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          null,                                           // profile_picture
+          r.last_name || null,
+          r.first_name || null,
+          r.middle_name || null,
+          r.suffix || null,
+          r.sex || null,
+          r.age || null,
+          r.birthdate || null,
+          r.civil_status || null,
+          r.work || null,
+          r.monthly_income || null,
+          r.contact_no || null,
+          r.purok || null,
+          r.address || null,
+          r.is_voters ? 1 : 0,
+          r.precint_no || null,
+          r.fullname_emergency || null,
+          r.contact_no_emergency || null,
+          1                                              // default status
+        ]
+      );
+    }
+
+    res.json({ message: "Residents imported successfully" });
+  } catch (err) {
+    console.error("Bulk import error:", err);
+    res.status(500).json({ message: "Failed to import residents" });
+  }
+});
+
+
+
 
 // ===================== HOUSEHOLDS =====================
 

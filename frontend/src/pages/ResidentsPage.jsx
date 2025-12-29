@@ -39,6 +39,10 @@ import BagongPilipinas from "../assets/BagongPilipinas.png";
 import Barangay369 from "../assets/Barangay369.jpg";
 import LungsodngManila from "../assets/LungsodngManila.jpg";
 import API_BASE_URL from '../ApiConfig';
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import * as XLSX from "xlsx";
+
 
 const initialForm = {
   last_name: '',
@@ -93,7 +97,7 @@ const ResidentsPage = () => {
 
   const [requestStatus, setRequestStatus] = useState({});
 
- 
+
 
 
   const sendPrintRequest = async (residentId) => {
@@ -253,6 +257,161 @@ const ResidentsPage = () => {
     setEditData(null);
   };
 
+  const incomeLabel = (val) => {
+    switch (Number(val)) {
+      case 0: return "Less than 5000";
+      case 1: return "5000 to 10000";
+      case 2: return "10000 to 20000";
+      case 3: return "20000 to 30000";
+      case 4: return "30000 to 40000";
+      case 5: return "40000 to 50000";
+      case 6: return "More than 50000";
+      default: return "";
+    }
+  };
+
+  const handleExportResidentsPDF = () => {
+    if (filteredResidents.length === 0) {
+      showSnackbar("No residents to export", "warning");
+      return;
+    }
+
+    const doc = new jsPDF({ orientation: "landscape" });
+
+    doc.setFontSize(14);
+    doc.text("Residents Master List", doc.internal.pageSize.width / 2, 15, {
+      align: "center",
+    });
+
+    const body = filteredResidents.map((r, i) => [
+      i + 1,
+      `${r.last_name}, ${r.first_name} ${r.middle_name || ""} ${r.suffix || ""}`,
+      r.sex,
+      r.age,
+      r.birthdate,
+      r.civil_status,
+      r.work,
+      incomeLabel(r.monthly_income),
+      r.contact_no,
+      r.purok,
+      r.address,
+      Number(r.is_voters) === 1 ? "Yes" : "No",
+      r.precint_no,
+      r.fullname_emergency,
+      r.contact_no_emergency,
+      Number(r.status) === 1 ? "Alive" : "Deceased",
+    ]);
+
+    autoTable(doc, {
+      startY: 22,
+      head: [[
+        "#",
+        "Full Name",
+        "Sex",
+        "Age",
+        "Birthdate",
+        "Civil Status",
+        "Work",
+        "Monthly Income",
+        "Contact",
+        "Purok",
+        "Address",
+        "Voter",
+        "Precinct",
+        "Emergency Name",
+        "Emergency Contact",
+        "Status",
+      ]],
+      body,
+      styles: {
+        fontSize: 7,
+        halign: "center",
+        valign: "middle",
+        lineWidth: 0.5,
+        lineColor: [0, 0, 0], // black border
+      },
+      headStyles: {
+        fillColor: [25, 118, 210],
+        textColor: [255, 255, 255],
+        fontStyle: "bold",
+        halign: "center",
+        lineWidth: 0.5,
+        lineColor: [0, 0, 0], // black border for header
+      },
+    });
+
+    doc.save("residents_list.pdf");
+  };
+
+
+
+  const handleExportResidentsExcel = () => {
+    if (filteredResidents.length === 0) {
+      showSnackbar("No residents to export", "warning");
+      return;
+    }
+
+    const data = filteredResidents.map((r, i) => ({
+      "#": i + 1,
+      "Full Name": `${r.last_name}, ${r.first_name} ${r.middle_name || ""} ${r.suffix || ""}`,
+      Sex: r.sex,
+      Age: r.age,
+      Birthdate: r.birthdate,
+      "Civil Status": r.civil_status,
+      Work: r.work,
+      "Monthly Income": incomeLabel(r.monthly_income),
+      Contact: r.contact_no,
+      Purok: r.purok,
+      Address: r.address,
+      Voter: Number(r.is_voters) === 1 ? "Yes" : "No",
+      "Precinct No": r.precint_no,
+      "Emergency Name": r.fullname_emergency,
+      "Emergency Contact": r.contact_no_emergency,
+      Status: Number(r.status) === 1 ? "Alive" : "Deceased",
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+
+    XLSX.utils.book_append_sheet(wb, ws, "Residents");
+    XLSX.writeFile(wb, "residents_list.xlsx");
+  };
+
+
+  const handleImportResidents = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+
+    reader.onload = async (evt) => {
+      const workbook = XLSX.read(evt.target.result, { type: "binary" });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      let rows = XLSX.utils.sheet_to_json(sheet);
+
+      // Optional: compute age here if you want
+      rows = rows.map(r => ({
+        ...r,
+        age: calculateAge(r.birthdate),
+      }));
+
+      try {
+        await api.post("/residents/bulk", rows);   // 👈 NEW ENDPOINT
+
+        showSnackbar("Residents imported successfully!", "success");
+        fetchResidents();
+      } catch (err) {
+        console.error(err);
+        showSnackbar("Import failed. Check Excel format.", "error");
+      }
+    };
+
+    reader.readAsBinaryString(file);
+  };
+
+
+
+
   const filteredResidents = residents.filter((r) => {
     const searchStr = `
     ${r.last_name}
@@ -408,7 +567,7 @@ const ResidentsPage = () => {
     fetchMyRole();
   }, []);
 
-   useEffect(() => {
+  useEffect(() => {
     if (myRole !== "User") return;
 
     residents.forEach(async (r) => {
@@ -488,6 +647,20 @@ const ResidentsPage = () => {
       }
     });
   }, [residents, myRole]);
+
+  const getRowBgColor = (residentId) => {
+    // approved = light green
+    if (approvedRequests[residentId]) {
+      return "#d4edda"; // light green
+    }
+
+    // requested but not approved = light yellow
+    if (requestStatus[residentId]?.exists) {
+      return "#fff3cd"; // light yellow
+    }
+
+    return "transparent";
+  };
 
 
   // // 🔒 Disable right-click
@@ -758,6 +931,7 @@ const ResidentsPage = () => {
                     display: "flex",
                     justifyContent: "flex-end", // ⬅ pushes buttons to the right
                     gap: 2,
+                    mt: 2
                   }}
                 >
                   <Button
@@ -771,7 +945,41 @@ const ResidentsPage = () => {
                   </Button>
 
                   <Button
-                    sx={{ height: "55px", width: "223px", ml: 57 }}
+                    sx={{ height: "55px", width: "223px" }}
+                    variant="contained"
+                    color="secondary"
+                    onClick={handleExportResidentsPDF}
+                  >
+                    Export PDF
+                  </Button>
+
+                  <Button
+                    sx={{ height: "55px", width: "223px" }}
+                    variant="contained"
+                    color="success"
+                    onClick={handleExportResidentsExcel}
+                  >
+                    Export Excel
+                  </Button>
+
+                  <Button
+                    sx={{ height: "55px", width: "223px" }}
+                    variant="contained"
+                    component="label"
+                    color="warning"
+                  >
+                    Import Excel
+                    <input
+                      hidden
+                      type="file"
+                      accept=".xlsx,.xls"
+                      onChange={handleImportResidents}
+                    />
+                  </Button>
+
+
+                  <Button
+                    sx={{ height: "55px", width: "260px", ml: 62 }}
                     variant="contained"      // ⬅ blue background
                     color="primary"          // ⬅ normal MUI blue
                     className="hide-on-print"
@@ -890,7 +1098,31 @@ const ResidentsPage = () => {
 
               <TableBody>
                 {paginatedResidents.map((r) => (
-                  <TableRow key={r.id}>
+                  <TableRow
+                    key={r.id}
+                    sx={{
+                      backgroundColor:
+                        myRole === "User"
+                          ? requestStatus[r.id]?.status === "approved"
+                            ? "#d4edda" // ✅ light green
+                            : requestStatus[r.id]?.exists
+                              ? "#fff3cd" // ⏳ light yellow
+                              : "transparent"
+                          : "transparent",
+
+                      "&:hover": {
+                        backgroundColor:
+                          myRole === "User"
+                            ? requestStatus[r.id]?.status === "approved"
+                              ? "#c3e6cb"
+                              : requestStatus[r.id]?.exists
+                                ? "#ffe8a1"
+                                : "#f5f5f5"
+                            : "#f5f5f5",
+                      },
+                    }}
+                  >
+
                     <TableCell sx={{ border: "2px solid black", textAlign: "center", color: "black" }}>{r.id}</TableCell>
                     <TableCell sx={{ border: "2px solid black", textAlign: "center", color: "black" }}>
                       {r.profile_picture && r.profile_picture.trim() !== "" ? (
@@ -967,7 +1199,7 @@ const ResidentsPage = () => {
                         variant="contained"
                         size="small"
                         color="primary"
-                        sx={{ width: 90, mb: 1, fontWeight: "bold" }}
+                        sx={{ width: 90, mb: 1, fontWeight: "bold", border: "2px solid #000", }}
                         onClick={async () => {
                           // 🔓 ADMIN & SUPERADMIN
                           if (["Admin", "SuperAdmin"].includes(myRole)) {
@@ -993,7 +1225,7 @@ const ResidentsPage = () => {
                       {myRole === "User" && (
                         <Box
                           sx={{
-                            border: "1px solid #ddd",
+                            border: "2px solid #000",
                             borderRadius: 1,
                             p: 1,
                             mb: 1,
@@ -1043,7 +1275,7 @@ const ResidentsPage = () => {
 
 
 
-                        
+
 
                         </Box>
                       )}
@@ -1055,7 +1287,7 @@ const ResidentsPage = () => {
                         variant="contained"
                         color="success"
                         disabled={myRole === "User"}
-                        sx={{ width: 90, fontWeight: "bold" }}
+                        sx={{ width: 90, fontWeight: "bold", border: "2px solid #000", }}
                         onClick={() => handleEditClick(r)}
                       >
                         Edit

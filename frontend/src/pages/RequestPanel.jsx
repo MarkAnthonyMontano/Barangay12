@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from 'react';
+import { SettingsContext } from "../App";
 import {
   Paper,
   Table,
@@ -31,6 +32,7 @@ const formatRequestType = (type) =>
     .replace(/\b\w/g, (c) => c.toUpperCase());
 
 export default function RequestPanel() {
+  const { settings } = useContext(SettingsContext);
   const [pending, setPending] = useState([]);
   const [approved, setApproved] = useState([]);
   const [rejected, setRejected] = useState([]);
@@ -108,24 +110,24 @@ export default function RequestPanel() {
   const renderTable = (data, actions, showStatusColumn) => (
     <TableContainer>
       <Table size="small">
-        <TableHead>
+        <TableHead sx={{ backgroundColor: "gray" }}>
           <TableRow>
-            <TableCell sx={{ border: "2px solid black" }}>
+            <TableCell sx={{ border: "2px solid black", textAlign: "center", color: "white", }}>
               <strong>Name</strong>
             </TableCell>
-            <TableCell sx={{ border: "2px solid black" }}>
+            <TableCell sx={{ border: "2px solid black", textAlign: "center", color: "white", }}>
               <strong>Requested By</strong>
             </TableCell>
-            <TableCell sx={{ border: "2px solid black" }}>
+            <TableCell sx={{ border: "2px solid black", textAlign: "center", color: "white", }}>
               <strong>Request Type</strong>
             </TableCell>
             {actions && (
-              <TableCell sx={{ border: "2px solid black" }}>
+              <TableCell sx={{ border: "2px solid black", textAlign: "center", color: "white", }}>
                 <strong>Actions</strong>
               </TableCell>
             )}
             {showStatusColumn && !actions && (
-              <TableCell sx={{ border: "2px solid black" }}>
+              <TableCell sx={{ border: "2px solid black", textAlign: "center", color: "white", }}>
                 <strong>Status</strong>
               </TableCell>
             )}
@@ -241,11 +243,11 @@ export default function RequestPanel() {
     paginate(rejected, rejectedPage);
 
   return (
-     <Box sx={{ p: 1, pr: 4, height: "calc(100vh - 150px)", overflowY: "auto" }}>
+    <Box sx={{ p: 1, pr: 4, height: "calc(100vh - 150px)", overflowY: "auto" }}>
       {/* PAGE TITLE */}
       <Box sx={{ mb: 2 }}>
         <Typography variant="h4" sx={{ fontWeight: "bold", fontFamily: "times new roman", fontSize: "36px" }}>
-        REQUEST PANEL
+          REQUEST PANEL
         </Typography>
       </Box>
 

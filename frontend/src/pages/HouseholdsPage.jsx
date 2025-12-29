@@ -27,6 +27,11 @@ import {
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import api from '../api';
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import * as XLSX from "xlsx";
+
+
 
 const initialHouseholdForm = {
   household_name: '',
@@ -121,6 +126,76 @@ const HouseholdsPage = () => {
     setSelectedHousehold(h);
     fetchMembers(h.id);
   };
+
+
+const handleExportHouseholdsPDF = () => {
+  if (filteredHouseholds.length === 0) {
+    alert("No households to export");
+    return;
+  }
+
+  const doc = new jsPDF({ orientation: "landscape" });
+
+  doc.setFontSize(14);
+  doc.text("Household Master List", doc.internal.pageSize.width / 2, 15, {
+    align: "center",
+  });
+
+  const body = filteredHouseholds.map((h, i) => [
+    i + 1,
+    h.household_name,
+    h.address,
+    h.purok || "",
+    h.member_count,
+  ]);
+
+  autoTable(doc, {
+    startY: 25,
+    head: [["#", "Household Name", "Address", "Purok", "Members"]],
+    body,
+    styles: {
+      halign: "center",
+      valign: "middle",
+      fontSize: 10,
+      lineWidth: 0.5,
+      lineColor: [0, 0, 0], // black border
+    },
+    headStyles: {
+      fillColor: [25, 118, 210],
+      textColor: [255, 255, 255],
+      fontStyle: "bold",
+      halign: "center",
+      lineWidth: 0.5,
+      lineColor: [0, 0, 0], // black border for header
+    },
+  });
+
+  doc.save("households.pdf");
+};
+
+
+  const handleExportHouseholdsExcel = () => {
+    if (filteredHouseholds.length === 0) {
+      alert("No households to export");
+      return;
+    }
+
+    const data = filteredHouseholds.map((h, i) => ({
+      "#": i + 1,
+      "Household Name": h.household_name,
+      Address: h.address,
+      Purok: h.purok || "",
+      Members: h.member_count,
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Households");
+
+    XLSX.writeFile(wb, "households.xlsx");
+  };
+
+
 
   const handleAddMember = async (e) => {
     e.preventDefault();
@@ -264,7 +339,7 @@ const HouseholdsPage = () => {
   };
 
   return (
-     <Box sx={{ p: 1, pr: 4, height: "calc(100vh - 150px)", overflowY: "auto" }}>
+    <Box sx={{ p: 1, pr: 4, height: "calc(100vh - 150px)", overflowY: "auto" }}>
       {/* PAGE TITLE */}
       <Box sx={{ mb: 2 }}>
         <Typography variant="h4" sx={{ fontWeight: "bold", fontFamily: "times new roman", fontSize: "36px" }}>
@@ -347,8 +422,16 @@ const HouseholdsPage = () => {
                   />
                 </Grid>
                 <Grid item xs={12}>
-                  <Button sx={{ height: "55px", width: "223px" }} disabled={myRole === "User"} type="submit" variant="contained">
+                  <Button sx={{ height: "55px", width: "223px", ml: 2 }} disabled={myRole === "User"} type="submit" variant="contained">
                     Save Household
+                  </Button>
+                  <Button  sx={{ height: "55px", width: "223px", ml: 2 }}   variant="contained"
+                    color="secondary" onClick={handleExportHouseholdsPDF}>
+                    Export PDF
+                  </Button>
+
+                  <Button sx={{ height: "55px", width: "223px", ml: 2 }}  variant="contained" color="success" onClick={handleExportHouseholdsExcel}>
+                    Export Excel
                   </Button>
                 </Grid>
               </Grid>
@@ -408,6 +491,12 @@ const HouseholdsPage = () => {
                       key={h.id}
                       hover
                       selected={selectedHousehold?.id === h.id}
+                      onClick={() => handleSelectHousehold(h)}
+                      sx={{
+                        cursor: "pointer",
+                        backgroundColor:
+                          selectedHousehold?.id === h.id ? "#e3f2fd" : "inherit",
+                      }}
                     >
                       <TableCell sx={{ border: "2px solid black", textAlign: "center", color: "black" }}>{h.id}</TableCell>
                       <TableCell sx={{ border: "2px solid black", textAlign: "center", color: "black" }}>{h.household_name}</TableCell>

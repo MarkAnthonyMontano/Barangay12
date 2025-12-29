@@ -179,40 +179,40 @@ const CertificatesPage = () => {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
 
-const openCamera = async () => {
-  const { protocol, hostname } = window.location;
+  const openCamera = async () => {
+    const { protocol, hostname } = window.location;
 
-  const isLocalhost =
-    hostname === "localhost" || hostname === "127.0.0.1";
+    const isLocalhost =
+      hostname === "localhost" || hostname === "127.0.0.1";
 
-  const isSecure = protocol === "https:";
+    const isSecure = protocol === "https:";
 
-  // ❌ Browser rule — cannot bypass
-  if (!isLocalhost && !isSecure) {
-    showSnackbar(
-      "Camera only works on localhost or HTTPS.\n\nUse image upload for LAN access.",
-      "error"
-    );
-    return;
-  }
+    // ❌ Browser rule — cannot bypass
+    if (!isLocalhost && !isSecure) {
+      showSnackbar(
+        "Camera only works on localhost or HTTPS.\n\nUse image upload for LAN access.",
+        "error"
+      );
+      return;
+    }
 
-  try {
-    setCameraOpen(true);
-    setCapturedImage(null);
-    setPreviewMode(false);
+    try {
+      setCameraOpen(true);
+      setCapturedImage(null);
+      setPreviewMode(false);
 
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: "user" },
-      audio: false,
-    });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "user" },
+        audio: false,
+      });
 
-    videoRef.current.srcObject = stream;
-    await videoRef.current.play();
-  } catch (err) {
-    console.error(err);
-    showSnackbar("Unable to access camera", "error");
-  }
-};
+      videoRef.current.srcObject = stream;
+      await videoRef.current.play();
+    } catch (err) {
+      console.error(err);
+      showSnackbar("Unable to access camera", "error");
+    }
+  };
 
 
 
@@ -641,7 +641,7 @@ const openCamera = async () => {
     <p style="text-align:justify;margin-bottom:16px;font-size:20px;text-indent:45px;">
       Issued this
       <b><u>${formatIssuedDateHTML(issueDate)}</u></b>
-      at Barangay ${barangayName}, ${municipality}, ${province}.
+      at ${barangayName}, ${municipality}, ${province}.
     </p>
   `;
   };
@@ -942,7 +942,7 @@ const openCamera = async () => {
             <Grid item xs={12}>
               <TextField
                 select
-                sx={{ width: "223px" }}
+                sx={{ width: "223px", height: "55px" }}
                 label="Certificate Type"
                 value={certType}
                 onChange={(e) => {
@@ -972,6 +972,8 @@ const openCamera = async () => {
               </TextField>
             </Grid>
 
+
+
             <Grid item xs={12}>
               <TextField
                 select
@@ -980,7 +982,7 @@ const openCamera = async () => {
                 onChange={(e) => setSelectedResidentId(e.target.value)}
                 fullWidth
                 required
-                sx={{ width: "223px" }}
+                sx={{ width: "223px", height: "55px" }}
               >
                 {residents.map((r) => (
                   <MenuItem key={r.id} value={r.id}>
@@ -994,7 +996,7 @@ const openCamera = async () => {
               <TextField
                 label="Address"
                 value={residentAddress}
-                sx={{ width: "223px" }}
+                sx={{ width: "223px", height: "55px" }}
                 onChange={(e) => setResidentAddress(e.target.value)}
                 fullWidth
               />
@@ -1004,6 +1006,7 @@ const openCamera = async () => {
 
             {certType === 'custom' && (
               <>
+                {/* MAIN TITLE */}
                 <Grid item xs={12}>
                   <TextField
                     label="Specify Certificate (Main Title)"
@@ -1039,9 +1042,55 @@ const openCamera = async () => {
                     }}
                   />
 
+
                 </Grid>
 
-                {isCustomSubtitle && (
+                {/* SUBTITLE DROPDOWN */}
+                <Grid item xs={12}>
+                  <TextField
+                    select
+                    label="Subtitle"
+                    value={subtitleType}
+                    onChange={(e) => setSubtitleType(e.target.value)}
+                    sx={{
+                      width: "223px",
+
+                      "& .MuiOutlinedInput-root": {
+                        height: "57px",
+                      },
+
+                      /* 🔥 THIS is the displayed select value */
+                      "& .MuiSelect-select": {
+                        height: "57px",
+                        display: "flex",
+                        alignItems: "center",
+                        padding: "0 14px",
+                        boxSizing: "border-box",
+                      },
+
+                      /* Label alignment */
+                      "& .MuiInputLabel-root": {
+                        top: "50%",
+                        transform: "translate(14px, -50%) scale(1)",
+                      },
+
+                      "& .MuiInputLabel-shrink": {
+                        top: 0,
+                        transform: "translate(14px, -6px) scale(0.75)",
+                      },
+                    }}
+                  >
+                    {CERTIFICATE_SUBTITLES.map((s) => (
+                      <MenuItem key={s.value} value={s.value}>
+                        {s.label}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+
+                </Grid>
+
+                {/* SPECIFY SUBTITLE (ONLY IF OTHER) */}
+                {subtitleType === "custom" && (
                   <Grid item xs={12}>
                     <TextField
                       label="Specify Subtitle"
@@ -1051,21 +1100,32 @@ const openCamera = async () => {
                       size="small"
                       sx={{
                         width: "223px",
+
                         "& .MuiInputBase-root": {
                           height: "57px",
                           display: "flex",
                           alignItems: "center",
                         },
+
                         "& .MuiInputBase-input": {
                           padding: "0 14px",
                           height: "100%",
+                          boxSizing: "border-box",
+                        },
+
+                        "& .MuiInputLabel-root": {
+                          top: "50%",
+                          transform: "translate(14px, -50%) scale(1)",
+                        },
+
+                        "& .MuiInputLabel-shrink": {
+                          top: 0,
+                          transform: "translate(14px, -6px) scale(0.75)",
                         },
                       }}
                     />
                   </Grid>
                 )}
-
-
               </>
             )}
 
@@ -1075,7 +1135,7 @@ const openCamera = async () => {
                 <TextField
                   label="Age"
                   type="number"
-                  sx={{ width: "223px" }}
+                  sx={{ width: "223px", height: "55px" }}
                   value={oathAge}
                   onChange={(e) => setOathAge(e.target.value)}
                   fullWidth
@@ -1086,7 +1146,7 @@ const openCamera = async () => {
                   label="Years of Residency in Barangay"
                   type="number"
                   value={yearsInBarangay}
-                  sx={{ width: "223px" }}
+                  sx={{ width: "223px", height: "55px" }}
                   onChange={(e) => setYearsInBarangay(e.target.value)}
                   fullWidth
                   inputProps={{ min: 0 }}
@@ -1099,6 +1159,7 @@ const openCamera = async () => {
                 label="Purpose"
                 placeholder="e.g., employment, scholarship, school requirement"
                 value={purpose}
+                sx={{ width: "223px", height: "55px" }}
                 onChange={(e) => setPurpose(e.target.value)}
                 fullWidth
               />
@@ -1108,7 +1169,7 @@ const openCamera = async () => {
               <TextField
                 label="Issue Date"
                 type="date"
-                sx={{ width: "223px" }}
+                sx={{ width: "223px", height: "55px" }}
                 value={issueDate}
                 onChange={(e) => setIssueDate(e.target.value)}
                 fullWidth
@@ -1132,6 +1193,7 @@ const openCamera = async () => {
                     label="Born On"
                     placeholder="e.g. January 15, 2010"
                     value={bornOn}
+                    sx={{ width: "223px", height: "55px" }}
                     onChange={(e) => setBornOn(e.target.value)}
                     fullWidth
                   />
@@ -1141,7 +1203,7 @@ const openCamera = async () => {
                   <TextField
                     label="Residing At"
                     placeholder={selectedResident?.address || "Complete Address"}
-
+                    sx={{ width: "223px", height: "55px" }}
                     value={minorAddress}
                     onChange={(e) => setMinorAddress(e.target.value)}
                     fullWidth
@@ -1153,6 +1215,7 @@ const openCamera = async () => {
                     label="Parent/s Name"
                     placeholder="e.g. Juan Dela Cruz & Maria Dela Cruz"
                     value={parentsName}
+                    sx={{ width: "223px", height: "55px" }}
                     onChange={(e) => setParentsName(e.target.value)}
                     fullWidth
                   />
@@ -1163,6 +1226,7 @@ const openCamera = async () => {
                     label="Registered Voter Of"
                     placeholder={selectedResident?.address || "Barangay Address"}
                     value={parentsVoterAddress}
+                    sx={{ width: "223px", height: "55px" }}
                     onChange={(e) => setParentsVoterAddress(e.target.value)}
                     fullWidth
                   />
@@ -1173,6 +1237,7 @@ const openCamera = async () => {
                     label="Catholic Institution / School"
                     placeholder="e.g. Espiritu Santo Parochial School"
                     value={schoolName}
+                    sx={{ width: "223px", height: "55px" }}
                     onChange={(e) => setSchoolName(e.target.value)}
                     fullWidth
                   />
@@ -1216,10 +1281,10 @@ const openCamera = async () => {
                 variant="contained"
                 fullWidth
                 startIcon={<SmartphoneIcon />}
-                sx={{ height: "56px", width: "223px" }}
+                sx={{ height: "56px", width: "223px", textAlign: "center" }}
                 component="label"
               >
-                Take Photo (Phone)
+                Select Photo from Album
                 <input
                   type="file"
                   accept="image/*"
@@ -1396,7 +1461,7 @@ const openCamera = async () => {
                   <Button
                     variant="contained"
                     color="success"
-                    sx={{ ml: 2, height: "56px", width: "223px", backgroundColor: "green", color: "white"  }}
+                    sx={{ ml: 2, height: "56px", width: "223px", backgroundColor: "green", color: "white" }}
                     onClick={handleGeneratePdfSuperAdmin}
                   >
                     Generate PDF
@@ -1956,7 +2021,7 @@ const openCamera = async () => {
                               );
                             })()}
                           </span>{" "}
-                          at Barangay {barangayName}, {municipality}, {province}.
+                          at {barangayName}, {municipality}, {province}.
                         </p>
                       </>
                     ) : isBarangayCertificate ? (
@@ -2007,7 +2072,7 @@ const openCamera = async () => {
                             a resident of  <span style={{ textDecoration: "underline", fontWeight: "bold" }}>
                               {" "}{selectedResident?.address}
                             </span>,{" "} for{" "}
-                            <u><strong>{yearsInBarangay || "___"}</strong></u> years,
+                            <u><strong>{yearsInBarangay || ""}</strong></u> years,
 
                             is a qualified availee of RA 11261 or the First Time Jobseekers Assistance Act of 2019.
                           </p>
@@ -2051,7 +2116,7 @@ const openCamera = async () => {
                                   </>
                                 );
                               })()}
-                            </span>{" "}, at Barangay 369, Zone 37, District III, City of Manila.
+                            </span>{" "}, at {settings.address}.
                           </p>
 
                           <p style={{ textAlign: "justify", textIndent: "45px" }}>
@@ -2077,11 +2142,11 @@ const openCamera = async () => {
                           </span>,
                           born on
                           <span style={{ fontWeight: "bold", textDecoration: "underline" }}>
-                            {" "}{bornOn || "____________________"}
+                            {" "}{bornOn || ""}
                           </span>,
                           residing at
                           <span style={{ fontWeight: "bold", textDecoration: "underline" }}>
-                            {" "}{minorAddress || "______________________________"}
+                            {" "}{minorAddress || ""}
                           </span>,
                           is known to be a person of good moral character and has no criminal record
                           nor derogatory information against him. He maintains a good reputation in
@@ -2098,15 +2163,15 @@ const openCamera = async () => {
                         >
                           His parent/s,
                           <span style={{ fontWeight: "bold", textDecoration: "underline" }}>
-                            {" "}{parentsName || "____________________________"}
+                            {" "}{parentsName || ""}
                           </span>,
                           are registered voters of
                           <span style={{ fontWeight: "bold", textDecoration: "underline" }}>
-                            {" "}{parentsVoterAddress || "____________________________"}
+                            {" "}{parentsVoterAddress || ""}
                           </span>.
                           His family desires to send him to a Catholic institution like
                           <span style={{ fontWeight: "bold", textDecoration: "underline" }}>
-                            {" "}{schoolName || "____________________________"}
+                            {" "}{schoolName || ""}
                           </span>
                           but is facing financial challenges. Their family is one of the registered
                           indigents in the community as certified by the Punong Barangay.
@@ -2167,7 +2232,7 @@ const openCamera = async () => {
                               );
                             })()}
                           </span>{" "}
-                          at the office of Barangay {barangayName}, {municipality}, {province}.
+                          at the office of {barangayName}, {municipality}, {province}.
                         </p>
                       </>
                     ) : (
@@ -2769,7 +2834,7 @@ const openCamera = async () => {
                               </>
                             );
                           })()}
-                        </span>{" "}, at Barangay 369, Zone 37, District III, City of Manila.
+                        </span>{" "}, at {settings.address}..
                       </p>
 
                       <p style={{ textAlign: "justify", textIndent: "45px" }}>
@@ -3100,7 +3165,7 @@ const openCamera = async () => {
                   <Typography sx={{ fontFamily: "times new roman", fontSize: "20px" }} paragraph>
                     I, <b>{buildFullName(selectedResident)?.toUpperCase()}</b>,{" "}
                     {oathAge || "___"} years of age,
-                    resident of {selectedResident?.address || "__________________________"}, for {yearsInBarangay || "___"} years,
+                    resident of {selectedResident?.address || ""}, for {yearsInBarangay || "___"} years,
                     availing the benefits of Republic Act 11261, otherwise known as the First Time
                     Jobseekers Act of 2019, do hereby declare, agree and undertake to abide and be
                     bound by the following:
