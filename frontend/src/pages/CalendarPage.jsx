@@ -75,15 +75,15 @@ export default function CalendarPage() {
 
     useEffect(() => {
         const fetchMyRole = async () => {
-        try {
-            const res = await api.get("/auth/me");
-            setMyRole(res.data.role);
-            setMyData(res.data);
+            try {
+                const res = await api.get("/auth/me");
+                setMyRole(res.data.role);
+                setMyData(res.data);
 
-        } catch (err) {
-            console.error(err);
-            showSnackbar("Failed to get my role", "error");
-        }
+            } catch (err) {
+                console.error(err);
+                showSnackbar("Failed to get my role", "error");
+            }
         };
 
         fetchMyRole();
@@ -93,19 +93,19 @@ export default function CalendarPage() {
         if (!myData) return;
 
         try {
-        const actor_name = `${myData.full_name} (${myData.username})`;
-        const actor_message = `User ${actor_name} ${actionMessage}`;
+            const actor_name = `${myData.full_name} (${myData.username})`;
+            const actor_message = `User ${actor_name} ${actionMessage}`;
 
-        await api.post("/audit_my_action", {
-            official_id: myData.official_id,
-            username: actor_name,
-            message: actor_message,
-            role: myRole,
-        });
+            await api.post("/audit_my_action", {
+                official_id: myData.official_id,
+                username: actor_name,
+                message: actor_message,
+                role: myRole,
+            });
 
         } catch (err) {
-        console.error(err);
-        showSnackbar("Failed to audit this action", "error");
+            console.error(err);
+            showSnackbar("Failed to audit this action", "error");
         }
     };
 
@@ -352,15 +352,35 @@ export default function CalendarPage() {
     const changeMonth = (offset) => {
         setCurrentMonth(
             new Date(currentMonth.getFullYear(), currentMonth.getMonth() + offset, 1)
+
         );
     };
+
+    // 🔒 Disable right-click
+    document.addEventListener('contextmenu', (e) => e.preventDefault());
+
+    // 🔒 Block DevTools shortcuts + Ctrl+P silently
+    document.addEventListener('keydown', (e) => {
+        const isBlockedKey =
+            e.key === 'F12' || // DevTools
+            e.key === 'F11' || // Fullscreen
+            (e.ctrlKey && e.shiftKey && (e.key.toLowerCase() === 'i' || e.key.toLowerCase() === 'j')) || // Ctrl+Shift+I/J
+            (e.ctrlKey && e.key.toLowerCase() === 'u') || // Ctrl+U (View Source)
+            (e.ctrlKey && e.key.toLowerCase() === 'p');   // Ctrl+P (Print)
+
+        if (isBlockedKey) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+    });
+
 
     // ---------------------------------------------------
     // UI
     // ---------------------------------------------------
     return (
 
-         <Box sx={{ p: 1, pr: 4, height: "calc(100vh - 150px)", overflowY: "auto" }}>
+        <Box sx={{ p: 1, pr: 4, height: "calc(100vh - 150px)", overflowY: "auto" }}>
             {/* PAGE TITLE */}
             <Box sx={{ mb: 2 }}>
                 <Typography variant="h4" sx={{ fontWeight: "bold", fontFamily: "times new roman", fontSize: "36px" }}>

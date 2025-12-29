@@ -63,11 +63,23 @@ export default function AdminSecuritySettings() {
   // Load profile
   // ===============================
   const loadProfile = async () => {
-    const res = await api.get("/auth/me");
-    setProfile(res.data);
-    setFullName(res.data.full_name || "");
-    setOtpRequired(Number(res.data.require_otp) === 1);
+    try {
+      const res = await api.get("/auth/me");
+      setProfile(res.data);
+      setFullName(res.data.full_name || "");
+      setOtpRequired(Number(res.data.require_otp) === 1);
+    } catch (err) {
+      console.error("Auth error:", err.response?.status);
+
+      // 🔐 Token expired or invalid
+      if (err.response?.status === 401) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        window.location.href = "/login";
+      }
+    }
   };
+
 
   useEffect(() => {
     if (localStorage.getItem("token")) loadProfile();
@@ -105,31 +117,31 @@ export default function AdminSecuritySettings() {
   // Profile Image
   // ===============================
   const handleImageUpload = async () => {
-  if (!imageFile) return;
+    if (!imageFile) return;
 
-  try {
-    const fd = new FormData();
-    fd.append("profile_img", imageFile); // ✅ MUST MATCH MULTER
+    try {
+      const fd = new FormData();
+      fd.append("profile_img", imageFile); // ✅ MUST MATCH MULTER
 
-    await api.put("/user/profile-image", fd); // ✅ PUT
+      await api.put("/user/profile-image", fd); // ✅ PUT
 
-    await loadProfile();
-    await syncSidebarUser();
+      await loadProfile();
+      await syncSidebarUser();
 
-    setSnack({
-      open: true,
-      message: "Profile image updated",
-      severity: "success",
-    });
-  } catch (err) {
-    console.error(err.response?.data || err);
-    setSnack({
-      open: true,
-      message: err.response?.data?.message || "Failed to upload image",
-      severity: "error",
-    });
-  }
-};
+      setSnack({
+        open: true,
+        message: "Profile image updated",
+        severity: "success",
+      });
+    } catch (err) {
+      console.error(err.response?.data || err);
+      setSnack({
+        open: true,
+        message: err.response?.data?.message || "Failed to upload image",
+        severity: "error",
+      });
+    }
+  };
 
   // ===============================
   // Password
@@ -202,8 +214,27 @@ export default function AdminSecuritySettings() {
     );
   }
 
+  // // 🔒 Disable right-click
+  // document.addEventListener('contextmenu', (e) => e.preventDefault());
+
+  // // 🔒 Block DevTools shortcuts + Ctrl+P silently
+  // document.addEventListener('keydown', (e) => {
+  //   const isBlockedKey =
+  //     e.key === 'F12' || // DevTools
+  //     e.key === 'F11' || // Fullscreen
+  //     (e.ctrlKey && e.shiftKey && (e.key.toLowerCase() === 'i' || e.key.toLowerCase() === 'j')) || // Ctrl+Shift+I/J
+  //     (e.ctrlKey && e.key.toLowerCase() === 'u') || // Ctrl+U (View Source)
+  //     (e.ctrlKey && e.key.toLowerCase() === 'p');   // Ctrl+P (Print)
+
+  //   if (isBlockedKey) {
+  //     e.preventDefault();
+  //     e.stopPropagation();
+  //   }
+  // });
+
+
   return (
-      <Box sx={{ p: 1, pr: 4, height: "calc(100vh - 150px)", overflowY: "auto" }}>
+    <Box sx={{ p: 1, pr: 4, height: "calc(100vh - 150px)", overflowY: "auto" }}>
       {/* PAGE TITLE */}
       <Box sx={{ mb: 2 }}>
         <Typography variant="h4" sx={{ fontWeight: "bold", fontFamily: "times new roman", fontSize: "36px" }}>

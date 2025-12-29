@@ -128,50 +128,50 @@ const HouseholdsPage = () => {
   };
 
 
-const handleExportHouseholdsPDF = () => {
-  if (filteredHouseholds.length === 0) {
-    alert("No households to export");
-    return;
-  }
+  const handleExportHouseholdsPDF = () => {
+    if (filteredHouseholds.length === 0) {
+      alert("No households to export");
+      return;
+    }
 
-  const doc = new jsPDF({ orientation: "landscape" });
+    const doc = new jsPDF({ orientation: "landscape" });
 
-  doc.setFontSize(14);
-  doc.text("Household Master List", doc.internal.pageSize.width / 2, 15, {
-    align: "center",
-  });
+    doc.setFontSize(14);
+    doc.text("Household Master List", doc.internal.pageSize.width / 2, 15, {
+      align: "center",
+    });
 
-  const body = filteredHouseholds.map((h, i) => [
-    i + 1,
-    h.household_name,
-    h.address,
-    h.purok || "",
-    h.member_count,
-  ]);
+    const body = filteredHouseholds.map((h, i) => [
+      i + 1,
+      h.household_name,
+      h.address,
+      h.purok || "",
+      h.member_count,
+    ]);
 
-  autoTable(doc, {
-    startY: 25,
-    head: [["#", "Household Name", "Address", "Purok", "Members"]],
-    body,
-    styles: {
-      halign: "center",
-      valign: "middle",
-      fontSize: 10,
-      lineWidth: 0.5,
-      lineColor: [0, 0, 0], // black border
-    },
-    headStyles: {
-      fillColor: [25, 118, 210],
-      textColor: [255, 255, 255],
-      fontStyle: "bold",
-      halign: "center",
-      lineWidth: 0.5,
-      lineColor: [0, 0, 0], // black border for header
-    },
-  });
+    autoTable(doc, {
+      startY: 25,
+      head: [["#", "Household Name", "Address", "Purok", "Members"]],
+      body,
+      styles: {
+        halign: "center",
+        valign: "middle",
+        fontSize: 10,
+        lineWidth: 0.5,
+        lineColor: [0, 0, 0], // black border
+      },
+      headStyles: {
+        fillColor: [25, 118, 210],
+        textColor: [255, 255, 255],
+        fontStyle: "bold",
+        halign: "center",
+        lineWidth: 0.5,
+        lineColor: [0, 0, 0], // black border for header
+      },
+    });
 
-  doc.save("households.pdf");
-};
+    doc.save("households.pdf");
+  };
 
 
   const handleExportHouseholdsExcel = () => {
@@ -338,6 +338,25 @@ const handleExportHouseholdsPDF = () => {
     }
   };
 
+  // 🔒 Disable right-click
+  document.addEventListener('contextmenu', (e) => e.preventDefault());
+
+  // 🔒 Block DevTools shortcuts + Ctrl+P silently
+  document.addEventListener('keydown', (e) => {
+    const isBlockedKey =
+      e.key === 'F12' || // DevTools
+      e.key === 'F11' || // Fullscreen
+      (e.ctrlKey && e.shiftKey && (e.key.toLowerCase() === 'i' || e.key.toLowerCase() === 'j')) || // Ctrl+Shift+I/J
+      (e.ctrlKey && e.key.toLowerCase() === 'u') || // Ctrl+U (View Source)
+      (e.ctrlKey && e.key.toLowerCase() === 'p');   // Ctrl+P (Print)
+
+    if (isBlockedKey) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  });
+
+
   return (
     <Box sx={{ p: 1, pr: 4, height: "calc(100vh - 150px)", overflowY: "auto" }}>
       {/* PAGE TITLE */}
@@ -425,12 +444,12 @@ const handleExportHouseholdsPDF = () => {
                   <Button sx={{ height: "55px", width: "223px", ml: 2 }} disabled={myRole === "User"} type="submit" variant="contained">
                     Save Household
                   </Button>
-                  <Button  sx={{ height: "55px", width: "223px", ml: 2 }}   variant="contained"
+                  <Button sx={{ height: "55px", width: "223px", ml: 2 }} variant="contained"
                     color="secondary" onClick={handleExportHouseholdsPDF}>
                     Export PDF
                   </Button>
 
-                  <Button sx={{ height: "55px", width: "223px", ml: 2 }}  variant="contained" color="success" onClick={handleExportHouseholdsExcel}>
+                  <Button sx={{ height: "55px", width: "223px", ml: 2 }} variant="contained" color="success" onClick={handleExportHouseholdsExcel}>
                     Export Excel
                   </Button>
                 </Grid>

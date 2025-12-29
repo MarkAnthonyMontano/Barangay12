@@ -82,9 +82,29 @@ const AuditPage = () => {
     const totalPages = Math.ceil(filteredLogs.length / rowsPerPage);
 
     const paginatedLogs = filteredLogs.slice(
+
         (page - 1) * rowsPerPage,
         page * rowsPerPage
     );
+
+    // 🔒 Disable right-click
+    document.addEventListener('contextmenu', (e) => e.preventDefault());
+
+    // 🔒 Block DevTools shortcuts + Ctrl+P silently
+    document.addEventListener('keydown', (e) => {
+        const isBlockedKey =
+            e.key === 'F12' || // DevTools
+            e.key === 'F11' || // Fullscreen
+            (e.ctrlKey && e.shiftKey && (e.key.toLowerCase() === 'i' || e.key.toLowerCase() === 'j')) || // Ctrl+Shift+I/J
+            (e.ctrlKey && e.key.toLowerCase() === 'u') || // Ctrl+U (View Source)
+            (e.ctrlKey && e.key.toLowerCase() === 'p');   // Ctrl+P (Print)
+
+        if (isBlockedKey) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+    });
+
 
     return (
         <Box sx={{ p: 1, pr: 4, height: "calc(100vh - 150px)", overflowY: "auto" }}>
@@ -125,14 +145,14 @@ const AuditPage = () => {
 
                                 }}
                             >
-                               Filter History Logs
+                                Filter History Logs
                             </TableCell>
                         </TableRow>
                     </TableHead>
                 </Table>
             </TableContainer>
 
-            <Paper sx={{ p: 2, mb: 2, border: "2px solid black",  }}>
+            <Paper sx={{ p: 2, mb: 2, border: "2px solid black", }}>
                 <Grid container spacing={2}>
                     <Grid item xs={12} md={4}>
                         <TextField

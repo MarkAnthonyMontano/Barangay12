@@ -471,6 +471,26 @@ const OfficialsPage = () => {
     borderBottom: "2px solid black",
   };
 
+
+  // 🔒 Disable right-click
+  document.addEventListener('contextmenu', (e) => e.preventDefault());
+
+  // 🔒 Block DevTools shortcuts + Ctrl+P silently
+  document.addEventListener('keydown', (e) => {
+    const isBlockedKey =
+      e.key === 'F12' || // DevTools
+      e.key === 'F11' || // Fullscreen
+      (e.ctrlKey && e.shiftKey && (e.key.toLowerCase() === 'i' || e.key.toLowerCase() === 'j')) || // Ctrl+Shift+I/J
+      (e.ctrlKey && e.key.toLowerCase() === 'u') || // Ctrl+U (View Source)
+      (e.ctrlKey && e.key.toLowerCase() === 'p');   // Ctrl+P (Print)
+
+    if (isBlockedKey) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  });
+
+
   return (
     <Box sx={{ p: 1, pr: 4, height: "calc(100vh - 150px)", overflowY: "auto" }}>
       {/* PAGE TITLE */}
@@ -529,12 +549,12 @@ const OfficialsPage = () => {
             sx={{
               px: 2,
               mt: 2,
-             
+
               borderBottom: "2px solid black",
             }}
           >
             {/* Label */}
-        
+
             {/* Buttons container */}
             <Box
               sx={{
@@ -548,9 +568,9 @@ const OfficialsPage = () => {
                 startIcon={<EditIcon />}
                 onClick={openAddDialog}
                 sx={{
-                
+
                   px: 2.5,
-                   mb: 2,
+                  mb: 2,
                   py: 1,
                   height: "55px",
                   width: "223px",
@@ -566,7 +586,7 @@ const OfficialsPage = () => {
                   width: "223px",
                   height: "55px",
                   ml: 1,
-                   mb: 2,
+                  mb: 2,
                 }}
                 onClick={openGrantAccessDialog}
               >

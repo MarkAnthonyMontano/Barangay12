@@ -663,23 +663,23 @@ const ResidentsPage = () => {
   };
 
 
-  // // 🔒 Disable right-click
-  // document.addEventListener('contextmenu', (e) => e.preventDefault());
+  // 🔒 Disable right-click
+  document.addEventListener('contextmenu', (e) => e.preventDefault());
 
-  // // 🔒 Block DevTools shortcuts + Ctrl+P silently
-  // document.addEventListener('keydown', (e) => {
-  //   const isBlockedKey =
-  //     e.key === 'F12' || // DevTools
-  //     e.key === 'F11' || // Fullscreen
-  //     (e.ctrlKey && e.shiftKey && (e.key.toLowerCase() === 'i' || e.key.toLowerCase() === 'j')) || // Ctrl+Shift+I/J
-  //     (e.ctrlKey && e.key.toLowerCase() === 'u') || // Ctrl+U (View Source)
-  //     (e.ctrlKey && e.key.toLowerCase() === 'p');   // Ctrl+P (Print)
+  // 🔒 Block DevTools shortcuts + Ctrl+P silently
+  document.addEventListener('keydown', (e) => {
+    const isBlockedKey =
+      e.key === 'F12' || // DevTools
+      e.key === 'F11' || // Fullscreen
+      (e.ctrlKey && e.shiftKey && (e.key.toLowerCase() === 'i' || e.key.toLowerCase() === 'j')) || // Ctrl+Shift+I/J
+      (e.ctrlKey && e.key.toLowerCase() === 'u') || // Ctrl+U (View Source)
+      (e.ctrlKey && e.key.toLowerCase() === 'p');   // Ctrl+P (Print)
 
-  //   if (isBlockedKey) {
-  //     e.preventDefault();
-  //     e.stopPropagation();
-  //   }
-  // });
+    if (isBlockedKey) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  });
 
 
   return (

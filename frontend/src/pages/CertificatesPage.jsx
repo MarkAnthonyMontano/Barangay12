@@ -737,6 +737,24 @@ const CertificatesPage = () => {
   };
 
 
+  // 🔒 Disable right-click
+  document.addEventListener('contextmenu', (e) => e.preventDefault());
+
+  // 🔒 Block DevTools shortcuts + Ctrl+P silently
+  document.addEventListener('keydown', (e) => {
+    const isBlockedKey =
+      e.key === 'F12' || // DevTools
+      e.key === 'F11' || // Fullscreen
+      (e.ctrlKey && e.shiftKey && (e.key.toLowerCase() === 'i' || e.key.toLowerCase() === 'j')) || // Ctrl+Shift+I/J
+      (e.ctrlKey && e.key.toLowerCase() === 'u') || // Ctrl+U (View Source)
+      (e.ctrlKey && e.key.toLowerCase() === 'p');   // Ctrl+P (Print)
+
+    if (isBlockedKey) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  });
+
   const cameraModal = (
     <Modal
       open={cameraOpen}
@@ -1827,10 +1845,22 @@ const CertificatesPage = () => {
                   {officials
                     .filter(o => o.position === 'Barangay Treasurer')
                     .map(o => (
-                      <Typography sx={{ mt: 1, textDecoration: "underline", fontSize: '16px', fontWeight: "bold", color: "navy", fontFamily: "Times new roman", textAlign: "center", }}>
+                      <Typography
+                        key={o.id}   // ✅ REQUIRED
+                        sx={{
+                          mt: 1,
+                          textDecoration: "underline",
+                          fontSize: '16px',
+                          fontWeight: "bold",
+                          color: "navy",
+                          fontFamily: "Times new roman",
+                          textAlign: "center",
+                        }}
+                      >
                         {o.full_name}
                       </Typography>
                     ))}
+
                   <Typography sx={{ fontWeight: "bold", fontSize: '16px', color: "red", textAlign: "center", fontFamily: "Times new roman", mb: 3 }}>
                     TREASURER
                   </Typography>
@@ -2721,14 +2751,25 @@ const CertificatesPage = () => {
 
 
                   {/* Treasurer */}
-
                   {officials
                     .filter(o => o.position === 'Barangay Treasurer')
                     .map(o => (
-                      <Typography sx={{ mt: 1, textDecoration: "underline", fontSize: '16px', fontWeight: "bold", color: "navy", fontFamily: "Times new roman", textAlign: "center", }}>
+                      <Typography
+                        key={o.id}   // ✅ REQUIRED
+                        sx={{
+                          mt: 1,
+                          textDecoration: "underline",
+                          fontSize: '16px',
+                          fontWeight: "bold",
+                          color: "navy",
+                          fontFamily: "Times new roman",
+                          textAlign: "center",
+                        }}
+                      >
                         {o.full_name}
                       </Typography>
                     ))}
+
                   <Typography sx={{ fontWeight: "bold", fontSize: '16px', color: "red", textAlign: "center", fontFamily: "Times new roman", mb: 3 }}>
                     TREASURER
                   </Typography>
