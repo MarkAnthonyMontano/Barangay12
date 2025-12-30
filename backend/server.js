@@ -806,26 +806,26 @@ app.post('/api/residents', upload.single('profile_img'), verifyToken, async (req
       precint_no,
       fullname_emergency,
       contact_no_emergency,
-      status
+      status,
+      is_pwd,
+      living
     } = req.body;
 
     if (!last_name || !first_name || !sex) {
-      return res
-        .status(400)
-        .json({ message: 'last_name, first_name, and sex are required.' });
+      return res.status(400).json({
+        message: 'last_name, first_name, and sex are required.'
+      });
     }
+
+    const normalizedIsPwd =
+      is_pwd === 1 || is_pwd === "1" || is_pwd === true ? 1 : 0;
 
     const profile_picture = req.file
       ? `/uploads/profile_pictures/${req.file.filename}`
       : null;
 
     const result = await query(
-      `INSERT INTO residents
-      (profile_picture, last_name, first_name, middle_name, suffix, sex, age, birthdate,
-        civil_status, work, monthly_income, contact_no, purok, address, is_voters, precint_no,
-        fullname_emergency, contact_no_emergency, status)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
+      `INSERT INTO residents (
         profile_picture,
         last_name,
         first_name,
@@ -840,60 +840,15 @@ app.post('/api/residents', upload.single('profile_img'), verifyToken, async (req
         contact_no,
         purok,
         address,
-        is_voters ?? 0,
+        is_voters,
         precint_no,
         fullname_emergency,
         contact_no_emergency,
-        status ?? 1
-      ]
-    );
-
-    const created = await query('SELECT * FROM residents WHERE id = ?', [
-      result.insertId,
-    ]);
-
-    res.status(201).json(created[0]);
-  } catch (err) {
-    console.error('Error creating resident:', err);
-    res.status(500).json({ message: 'Error creating resident' });
-  }
-});
-
-// PUT /api/residents/:id - update (protected)
-app.put('/api/residents/:id', upload.single('profile_img'), verifyToken, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const {
-      last_name,
-      first_name,
-      middle_name,
-      suffix,
-      sex,
-      age,
-      birthdate,
-      civil_status,
-      work,
-      monthly_income,
-      contact_no,
-      purok,
-      address,
-      is_voters,
-      precint_no,
-      fullname_emergency,
-      contact_no_emergency,
-      status,
-    } = req.body;
-
-    const profile_picture = req.file
-      ? `/uploads/profile_pictures/${req.file.filename}`
-      : req.body.profile_picture;
-
-    await query(
-      `UPDATE residents
-       SET profile_picture = ?, last_name = ?, first_name = ?, middle_name = ?, suffix = ?,
-           sex = ?, age = ?, birthdate = ?, civil_status = ?, work = ?, monthly_income = ?, contact_no = ?, 
-           purok = ?, address = ?, is_voters = ?, precint_no = ?, fullname_emergency = ?, contact_no_emergency = ?, status = ?
-       WHERE id = ?`,
+        status,
+        is_pwd,
+        living
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         profile_picture,
         last_name,
@@ -914,17 +869,137 @@ app.put('/api/residents/:id', upload.single('profile_img'), verifyToken, async (
         fullname_emergency,
         contact_no_emergency,
         status ?? 1,
+        normalizedIsPwd,
+        living || null
+      ]
+    );
+
+    const created = await query(
+      'SELECT * FROM residents WHERE id = ?',
+      [result.insertId]
+    );
+
+    res.status(201).json(created[0]);
+  } catch (err) {
+    console.error('Error creating resident:', err);
+    res.status(500).json({ message: 'Error creating resident' });
+  }
+});
+
+
+app.put('/api/residents/:id', upload.single('profile_img'), verifyToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const existing = await query(
+      'SELECT * FROM residents WHERE id = ?',
+      [id]
+    );
+
+    if (existing.length === 0) {
+      return res.status(404).json({ message: "Resident not found" });
+    }
+
+    const old = existing[0];
+
+    const {
+      last_name,
+      first_name,
+      middle_name,
+      suffix,
+      sex,
+      age,
+      birthdate,
+      civil_status,
+      work,
+      monthly_income,
+      contact_no,
+      purok,
+      address,
+      is_voters,
+      precint_no,
+      fullname_emergency,
+      contact_no_emergency,
+      status,
+      is_pwd,
+      living,
+    } = req.body;
+
+    const profile_picture = req.file
+      ? `/uploads/profile_pictures/${req.file.filename}`
+      : old.profile_picture;
+
+    const normalizedIsPwd =
+      is_pwd === 1 || is_pwd === "1" || is_pwd === true
+        ? 1
+        : is_pwd === 0 || is_pwd === "0"
+          ? 0
+          : old.is_pwd;
+
+    await query(
+      `UPDATE residents SET
+        profile_picture = ?,
+        last_name = ?,
+        first_name = ?,
+        middle_name = ?,
+        suffix = ?,
+        sex = ?,
+        age = ?,
+        birthdate = ?,
+        civil_status = ?,
+        work = ?,
+        monthly_income = ?,
+        contact_no = ?,
+        purok = ?,
+        address = ?,
+        is_voters = ?,
+        precint_no = ?,
+        fullname_emergency = ?,
+        contact_no_emergency = ?,
+        status = ?,
+        is_pwd = ?,
+        living = ?
+      WHERE id = ?`,
+      [
+        profile_picture,
+
+        last_name !== undefined ? last_name : old.last_name,
+        first_name !== undefined ? first_name : old.first_name,
+        middle_name !== undefined ? middle_name : old.middle_name,
+        suffix !== undefined ? suffix : old.suffix,
+        sex !== undefined ? sex : old.sex,
+        age !== undefined ? age : old.age,
+        birthdate !== undefined ? birthdate : old.birthdate,
+        civil_status !== undefined ? civil_status : old.civil_status,
+        work !== undefined ? work : old.work,
+        monthly_income !== undefined ? monthly_income : old.monthly_income,
+        contact_no !== undefined ? contact_no : old.contact_no,
+        purok !== undefined ? purok : old.purok,
+        address !== undefined ? address : old.address,
+        is_voters !== undefined ? is_voters : old.is_voters,
+        precint_no !== undefined ? precint_no : old.precint_no,
+        fullname_emergency !== undefined ? fullname_emergency : old.fullname_emergency,
+        contact_no_emergency !== undefined ? contact_no_emergency : old.contact_no_emergency,
+        status !== undefined ? status : old.status,
+        normalizedIsPwd,
+        living !== undefined ? living : old.living,
         id,
       ]
     );
 
-    const updated = await query('SELECT * FROM residents WHERE id = ?', [id]);
+    const updated = await query(
+      'SELECT * FROM residents WHERE id = ?',
+      [id]
+    );
+
     res.json(updated[0]);
+
   } catch (err) {
     console.error('Error updating resident:', err);
     res.status(500).json({ message: 'Error updating resident' });
   }
 });
+
 
 // GET /api/residents - public view
 app.get('/api/residents', async (req, res) => {
@@ -970,6 +1045,9 @@ app.post("/api/residents/bulk", verifyToken, async (req, res) => {
     }
 
     for (const r of residents) {
+      const bulkIsPwd =
+        r.is_pwd === 1 || r.is_pwd === "1" || r.is_pwd === true ? 1 : 0;
+
       await pool.query(
         `INSERT INTO residents (
           profile_picture,
@@ -990,11 +1068,13 @@ app.post("/api/residents/bulk", verifyToken, async (req, res) => {
           precint_no,
           fullname_emergency,
           contact_no_emergency,
-          status
+          status,
+          is_pwd,
+          living
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
-          null,                                           // profile_picture
+          null,
           r.last_name || null,
           r.first_name || null,
           r.middle_name || null,
@@ -1012,7 +1092,9 @@ app.post("/api/residents/bulk", verifyToken, async (req, res) => {
           r.precint_no || null,
           r.fullname_emergency || null,
           r.contact_no_emergency || null,
-          1                                              // default status
+          1,
+          bulkIsPwd,
+          r.living || null
         ]
       );
     }
@@ -1289,8 +1371,8 @@ app.delete('/api/incidents/:id', verifyToken, async (req, res) => {
 
     await pool.query('DELETE FROM incidents WHERE id = ?', [incidentID]);
 
-    res.json({message: "The record successfully deleted"}); 
-  } catch(err) {
+    res.json({ message: "The record successfully deleted" });
+  } catch (err) {
     console.error('Error in deleting incidents:', err);
     res.status(500).json({ message: 'Error in deleting incidents' });
   }
@@ -2143,9 +2225,9 @@ app.get("/api/admin/print-requests/rejected", verifyToken, async (req, res) => {
 
 
 app.delete("/api/admin/print-requests/approved", verifyToken, async (req, res) => {
-     if (!["Admin", "SuperAdmin"].includes(req.user.role)) {
-      return res.status(403).json({ message: "Unauthorized" });
-    }
+  if (!["Admin", "SuperAdmin"].includes(req.user.role)) {
+    return res.status(403).json({ message: "Unauthorized" });
+  }
 
 
   await query(`DELETE FROM print_requests WHERE status = 'approved'`);
@@ -2153,9 +2235,9 @@ app.delete("/api/admin/print-requests/approved", verifyToken, async (req, res) =
 });
 
 app.delete("/api/admin/print-requests/rejected", verifyToken, async (req, res) => {
-    if (!["Admin", "SuperAdmin"].includes(req.user.role)) {
-      return res.status(403).json({ message: "Unauthorized" });
-    }
+  if (!["Admin", "SuperAdmin"].includes(req.user.role)) {
+    return res.status(403).json({ message: "Unauthorized" });
+  }
 
 
   await query(`DELETE FROM print_requests WHERE status = 'rejected'`);
@@ -2464,8 +2546,8 @@ app.get('/api/audit_logs', async (req, res) => {
   try {
     const [rows] = await pool.query("SELECT * FROM audit");
 
-    if(rows.length === 0) {
-      return res.status(400).json({message: "No records existed in this page"})
+    if (rows.length === 0) {
+      return res.status(400).json({ message: "No records existed in this page" })
     }
 
     res.json(rows);
@@ -2476,15 +2558,15 @@ app.get('/api/audit_logs', async (req, res) => {
 });
 
 app.post('/api/audit_my_action', verifyToken, async (req, res) => {
-  try{
-    const {official_id, username, message, role} = req.body;
+  try {
+    const { official_id, username, message, role } = req.body;
 
     await pool.query('INSERT INTO audit(actor_id, actor_name, message, role) VALUES (?, ?, ?, ?)', [official_id, username, message, role]);
 
-    res.json({message: "This action was successfully audited"});
-  }catch(err){
+    res.json({ message: "This action was successfully audited" });
+  } catch (err) {
     console.log("Error: ", err);
-    res.status(500).json({message: "Internal Server Error", err});
+    res.status(500).json({ message: "Internal Server Error", err });
   }
 })
 

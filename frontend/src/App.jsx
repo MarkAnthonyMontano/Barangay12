@@ -75,7 +75,7 @@ export default function App() {
   const [token, setToken] = useState(() => localStorage.getItem("token") || "");
   const [settings, setSettings] = useState(null);
   const [user, setUser] = useState(() => {
-    const stored = localStorage.getItem("user");
+    const stored = localStorage.getItem("User");
     return stored ? JSON.parse(stored) : null;
   });
 
@@ -133,12 +133,12 @@ export default function App() {
     try {
       const res = await api.get("/auth/me");
       setUser(res.data);
-      localStorage.setItem("user", JSON.stringify(res.data));
+      localStorage.setItem("User", JSON.stringify(res.data));
     } catch (err) {
       if (err.response?.status === 401) {
         handleLogout();
       } else {
-        console.error("Failed to fetch user:", err);
+        console.error("Failed to fetch User:", err);
       }
     }
   };
@@ -154,14 +154,14 @@ export default function App() {
     setToken(token);
     setUser(user);
     localStorage.setItem("token", token);
-    localStorage.setItem("user", JSON.stringify(user));
+    localStorage.setItem("User", JSON.stringify(user));
   };
 
   const handleLogout = () => {
     setToken("");
     setUser(null);
     localStorage.removeItem("token");
-    localStorage.removeItem("user");
+    localStorage.removeItem("User");
     setAuthToken(null);
   };
 

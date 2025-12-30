@@ -62,6 +62,8 @@ const initialForm = {
   precint_no: '',
   fullname_emergency: '',
   contact_no_emergency: '',
+  is_pwd: 0,
+  living: '',
 };
 
 const API_ROOT = `${API_BASE_URL}`;
@@ -224,33 +226,39 @@ const ResidentsPage = () => {
   };
 
 
-  const handleEditSave = async () => {
-    try {
-      setUpdating(true);
-      const data = new FormData();
+const handleEditSave = async () => {
+  try {
+    setUpdating(true);
+    const data = new FormData();
 
-      Object.keys(editData).forEach((key) => {
-        if (key !== "profile_img") data.append(key, editData[key]);
-      });
-
-      if (editData.profile_img) {
-        data.append("profile_img", editData.profile_img);
+    Object.entries(editData).forEach(([key, value]) => {
+      if (key !== "profile_img") {
+        data.append(key, value ?? "");
       }
+    });
 
-      await api.put(`/residents/${editData.id}`, data, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      await AuditMyAction("Updated resident record in Residents Page");
-      setEditOpen(false);
-      setEditData(null);
-      fetchResidents();
-    } catch (err) {
-      console.error(err);
-      showSnackbar(err.response?.data?.message || "Error updating resident", "error");
-    } finally {
-      setUpdating(false);
+    if (editData.profile_img) {
+      data.append("profile_img", editData.profile_img);
     }
-  };
+
+    await api.put(`/residents/${editData.id}`, data, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+
+    await AuditMyAction("Updated resident record in Residents Page");
+    setEditOpen(false);
+    setEditData(null);
+    fetchResidents();
+  } catch (err) {
+    console.error(err);
+    showSnackbar(
+      err.response?.data?.message || "Error updating resident",
+      "error"
+    );
+  } finally {
+    setUpdating(false);
+  }
+};
 
   const handleEditClose = () => {
     setEditOpen(false);
@@ -300,6 +308,8 @@ const ResidentsPage = () => {
       r.fullname_emergency,
       r.contact_no_emergency,
       Number(r.status) === 1 ? "Alive" : "Deceased",
+      Number(r.is_pwd) === 1 ? "Yes" : "No", // ✅ PWD
+      r.living || "",                         // ✅ Living
     ]);
 
     autoTable(doc, {
@@ -321,6 +331,8 @@ const ResidentsPage = () => {
         "Emergency Name",
         "Emergency Contact",
         "Status",
+        "PWD",        // ✅ NEW COLUMN
+        "Living",     // ✅ NEW COLUMN
       ]],
       body,
       styles: {
@@ -328,7 +340,7 @@ const ResidentsPage = () => {
         halign: "center",
         valign: "middle",
         lineWidth: 0.5,
-        lineColor: [0, 0, 0], // black border
+        lineColor: [0, 0, 0],
       },
       headStyles: {
         fillColor: [25, 118, 210],
@@ -336,12 +348,13 @@ const ResidentsPage = () => {
         fontStyle: "bold",
         halign: "center",
         lineWidth: 0.5,
-        lineColor: [0, 0, 0], // black border for header
+        lineColor: [0, 0, 0],
       },
     });
 
     doc.save("residents_list.pdf");
   };
+
 
 
 
@@ -368,6 +381,8 @@ const ResidentsPage = () => {
       "Emergency Name": r.fullname_emergency,
       "Emergency Contact": r.contact_no_emergency,
       Status: Number(r.status) === 1 ? "Alive" : "Deceased",
+      PWD: Number(r.is_pwd) === 1 ? "Yes" : "No",
+      Living: r.living || "",
     }));
 
     const ws = XLSX.utils.json_to_sheet(data);
@@ -829,6 +844,19 @@ const ResidentsPage = () => {
                   <TextField label="Civil Status" name="civil_status" value={form.civil_status} onChange={handleChange} fullWidth />
                 </Grid>
                 <Grid item xs={12} md={1.5}>
+                  <TextField
+                    select
+                    label="PWD"
+                    name="is_pwd"
+                    value={form.is_pwd}
+                    onChange={handleChange}
+                    fullWidth
+                  >
+                    <MenuItem value={1}>Yes</MenuItem>
+                    <MenuItem value={0}>No</MenuItem>
+                  </TextField>
+                </Grid>
+                <Grid item xs={12} md={1.5}>
                   <TextField label="Work" name="work" value={form.work} onChange={handleChange} fullWidth />
                 </Grid>
                 <Grid item xs={12} md={1}>
@@ -888,6 +916,16 @@ const ResidentsPage = () => {
                     value={form.precint_no}
                     onChange={handleChange}
                     fullWidth
+                  />
+                </Grid>
+                <Grid item xs={12} md={3}>
+                  <TextField
+                    label="Living in Barangay (Years)"
+                    name="living"
+                    value={form.living}
+                    onChange={handleChange}
+                    fullWidth
+                    placeholder="e.g. 10 years / Since birth"
                   />
                 </Grid>
               </Grid>
@@ -1079,6 +1117,7 @@ const ResidentsPage = () => {
                   <TableCell sx={{ border: "2px solid black", textAlign: "center", color: "white", }} rowSpan={2}>Age</TableCell>
                   <TableCell sx={{ border: "2px solid black", textAlign: "center", color: "white", }} rowSpan={2}>Birthdate</TableCell>
                   <TableCell sx={{ border: "2px solid black", textAlign: "center", color: "white", }} rowSpan={2}>Civil Status</TableCell>
+                  <TableCell sx={{ border: "2px solid black", textAlign: "center", color: "white", }} rowSpan={2}>PWD</TableCell>
                   <TableCell sx={{ border: "2px solid black", textAlign: "center", color: "white", }} rowSpan={2}>Work</TableCell>
                   <TableCell sx={{ border: "2px solid black", textAlign: "center", color: "white", }} rowSpan={2}>Monthly Income</TableCell>
                   <TableCell sx={{ border: "2px solid black", textAlign: "center", color: "white", }} rowSpan={2}>Contact</TableCell>
@@ -1086,6 +1125,9 @@ const ResidentsPage = () => {
                   <TableCell sx={{ border: "2px solid black", textAlign: "center", color: "white", }} rowSpan={2}>Address</TableCell>
                   <TableCell sx={{ border: "2px solid black", textAlign: "center", color: "white", }} rowSpan={2}>Voters</TableCell>
                   <TableCell sx={{ border: "2px solid black", textAlign: "center", color: "white", }} rowSpan={2}>Precint No</TableCell>
+
+                  <TableCell sx={{ border: "2px solid black", textAlign: "center", color: "white", }} rowSpan={2}>Living</TableCell>
+
                   <TableCell sx={{ border: "2px solid black", textAlign: "center", color: "white", }} colSpan={2} align='center'>Contact In Case of Emergency</TableCell>
                   <TableCell sx={{ border: "2px solid black", textAlign: "center", color: "white", }} rowSpan={2} align='center'>Status</TableCell>
                   <TableCell sx={{ border: "2px solid black", textAlign: "center", color: "white", }} rowSpan={2} align="center">Actions</TableCell>
@@ -1158,6 +1200,9 @@ const ResidentsPage = () => {
                     <TableCell sx={{ border: "2px solid black", textAlign: "center", color: "black" }}>{r.age}</TableCell>
                     <TableCell sx={{ border: "2px solid black", textAlign: "center", color: "black" }}>{r.birthdate || ''}</TableCell>
                     <TableCell sx={{ border: "2px solid black", textAlign: "center", color: "black" }}>{r.civil_status || ''}</TableCell>
+                    <TableCell sx={{ border: "2px solid black", textAlign: "center", color: "black" }}>
+                      {Number(r.is_pwd) === 1 ? "Yes" : "No"}
+                    </TableCell>
                     <TableCell sx={{ border: "2px solid black", textAlign: "center", color: "black" }}>{r.work || ''}</TableCell>
                     <TableCell
                       sx={{ border: "2px solid black", textAlign: "center", color: "black" }}
@@ -1183,6 +1228,9 @@ const ResidentsPage = () => {
                     <TableCell sx={{ border: "2px solid black", textAlign: "center", color: "black" }}>{r.address || ''}</TableCell>
                     <TableCell sx={{ border: "2px solid black", textAlign: "center", color: "black" }}>{Number(r.is_voters) === 1 ? "Yes" : "No"}</TableCell>
                     <TableCell sx={{ border: "2px solid black", textAlign: "center", color: "black" }}>{r.precint_no}</TableCell>
+                    <TableCell sx={{ border: "2px solid black", textAlign: "center", color: "black" }} >
+                      {r.living || ""}
+                    </TableCell>
                     <TableCell sx={{ border: "2px solid black", textAlign: "center", color: "black" }}>{r.fullname_emergency || ''}</TableCell>
                     <TableCell sx={{ border: "2px solid black", textAlign: "center", color: "black" }}>{r.contact_no_emergency || ''}</TableCell>
                     <TableCell sx={{ border: "2px solid black", textAlign: "center", color: "black" }}>{Number(r.status) === 1 ? "Alive" : "Deceased"}</TableCell>
@@ -1365,12 +1413,14 @@ const ResidentsPage = () => {
 
 
 
-      {/* Edit Dialog */}
       <Dialog open={editOpen} onClose={handleEditClose} maxWidth="md" fullWidth>
         <DialogTitle>Edit Resident</DialogTitle>
+
         <DialogContent dividers>
           {editData && (
-            <Grid container spacing={2} sx={{ mt: 1 }}>
+            <Grid container spacing={3} sx={{ mt: 1 }}>
+
+              {/* PROFILE IMAGE */}
               <Grid item xs={12} md={4}>
                 <Button variant="outlined" component="label" fullWidth>
                   Change Picture
@@ -1388,17 +1438,15 @@ const ResidentsPage = () => {
                     }}
                   />
                 </Button>
+
                 {imageUpdatePreview && (
                   <Box
                     sx={{
-                      mt: 1,
-                      width: 100,
-                      height: 100,
+                      mt: 2,
+                      width: "100%",
+                      height: 180,
                       border: "1px solid #ccc",
                       borderRadius: 2,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
                       overflow: "hidden",
                       backgroundColor: "#f5f5f5",
                     }}
@@ -1406,211 +1454,137 @@ const ResidentsPage = () => {
                     <img
                       src={imageUpdatePreview}
                       alt="Profile Preview"
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                      }}
+                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
                     />
                   </Box>
                 )}
-
-
-              </Grid>
-              <Grid item xs={12} md={4}>
-                <TextField
-                  label="Last Name"
-                  name="last_name"
-                  value={editData.last_name}
-                  onChange={handleEditChange}
-                  fullWidth
-                  required
-                />
-              </Grid>
-              <Grid item xs={12} md={4}>
-                <TextField
-                  label="First Name"
-                  name="first_name"
-                  value={editData.first_name}
-                  onChange={handleEditChange}
-                  fullWidth
-                  required
-                />
-              </Grid>
-              <Grid item xs={12} md={4}>
-                <TextField
-                  label="Middle Name"
-                  name="middle_name"
-                  value={editData.middle_name || ''}
-                  onChange={handleEditChange}
-                  fullWidth
-                />
               </Grid>
 
-              <Grid item xs={12} md={3}>
-                <TextField
-                  label="Suffix"
-                  name="suffix"
-                  value={editData.suffix || ''}
-                  onChange={handleEditChange}
-                  fullWidth
-                />
+              {/* PERSONAL INFO */}
+              <Grid item xs={12} md={4}>
+                <TextField sx={{width: "223px", height: "55px"}}  label="Last Name" name="last_name" value={editData.last_name} onChange={handleEditChange} fullWidth required />
               </Grid>
-              <Grid item xs={12} md={3}>
-                <TextField
-                  select
-                  label="Sex"
-                  name="sex"
-                  value={editData.sex}
-                  onChange={handleEditChange}
-                  fullWidth
-                >
+
+              <Grid item xs={12} md={4}>
+                <TextField sx={{width: "223px", height: "55px"}}  label="First Name" name="first_name" value={editData.first_name} onChange={handleEditChange} fullWidth required />
+              </Grid>
+
+              <Grid item xs={12} md={4}>
+                <TextField sx={{width: "223px", height: "55px"}}  label="Middle Name" name="middle_name" value={editData.middle_name || ""} onChange={handleEditChange} fullWidth />
+              </Grid>
+
+              <Grid item xs={12} md={4}>
+                <TextField sx={{width: "223px", height: "55px"}}  label="Suffix" name="suffix" value={editData.suffix || ""} onChange={handleEditChange} fullWidth />
+              </Grid>
+
+              <Grid item xs={12} md={4}>
+                <TextField sx={{width: "223px", height: "55px"}}  select label="Sex" name="sex" value={editData.sex} onChange={handleEditChange} fullWidth>
                   <MenuItem value="Male">Male</MenuItem>
                   <MenuItem value="Female">Female</MenuItem>
                   <MenuItem value="Other">Other</MenuItem>
                 </TextField>
               </Grid>
-              <Grid item xs={12} md={8}>
-                <TextField
-                  label="Age"
-                  name="age"
-                  value={editData.age || ''}
-                  fullWidth
-                  InputProps={{ readOnly: true }}
-                />
 
-              </Grid>
-              <Grid item xs={12} md={3}>
-                <TextField
-                  type="date"
-                  label="Birthdate"
-                  name="birthdate"
-                  value={editData.birthdate || ''}
-                  onChange={handleEditChange}
-                  fullWidth
-                  InputLabelProps={{ shrink: true }}
-                />
-              </Grid>
-              <Grid item xs={12} md={3}>
-                <TextField
-                  label="Civil Status"
-                  name="civil_status"
-                  value={editData.civil_status || ''}
-                  onChange={handleEditChange}
-                  fullWidth
-                />
-              </Grid>
-              <Grid item xs={12} md={1.5}>
-                <TextField label="Work" name="work" value={editData.work || ''} onChange={handleEditChange} fullWidth />
-              </Grid>
-              <Grid item xs={12} md={1}>
-                <TextField sx={{ width: "223px" }} select label="Monthly Income" name="monthly_income" value={editData.monthly_income || ""} onChange={handleEditChange} fullWidth>
-                  <MenuItem value="0">Less than 5000</MenuItem>
-                  <MenuItem value="1">5000 to 10000</MenuItem>
-                  <MenuItem value="2">10000 to 20000</MenuItem>
-                  <MenuItem value="3">20000 to 30000</MenuItem>
-                  <MenuItem value="4">30000 to 40000</MenuItem>
-                  <MenuItem value="5">40000 to 50000</MenuItem>
-                  <MenuItem value="6">More than 50000</MenuItem>
-                </TextField>
-              </Grid>
               <Grid item xs={12} md={4}>
-                <TextField
-                  label="Contact No"
-                  name="contact_no"
-                  value={editData.contact_no || ''}
-                  onChange={handleEditChange}
-                  fullWidth
-                />
+                <TextField sx={{width: "223px", height: "55px"}}  type="date" label="Birthdate" name="birthdate" value={editData.birthdate || ""} onChange={handleEditChange} fullWidth InputLabelProps={{ shrink: true }} />
               </Grid>
-              <Grid item xs={12} md={8}>
-                <TextField
-                  label="Purok"
-                  name="purok"
-                  value={editData.purok || ''}
-                  onChange={handleEditChange}
-                  fullWidth
-                />
+
+              {/* DEMOGRAPHICS */}
+              <Grid item xs={12} md={4}>
+                <TextField sx={{width: "223px", height: "55px"}}  label="Age" value={editData.age || ""} InputProps={{ readOnly: true }} fullWidth />
               </Grid>
-              <Grid item xs={12} md={8}>
-                <TextField
-                  label="Address"
-                  name="address"
-                  value={editData.address || ''}
-                  onChange={handleEditChange}
-                  fullWidth
-                />
+
+              <Grid item xs={12} md={4}>
+                <TextField sx={{width: "223px", height: "55px"}}  label="Civil Status" name="civil_status" value={editData.civil_status || ""} onChange={handleEditChange} fullWidth />
               </Grid>
-              <Grid item xs={12} md={3}>
-                <TextField
-                  select
-                  label="Registered Voter"
-                  name="is_voters"
-                  style={{ width: "150px" }}
-                  value={editData.is_voters}
-                  onChange={handleEditChange}
-                  fullWidth
-                >
+
+              <Grid item xs={12} md={4}>
+                <TextField sx={{width: "223px", height: "55px"}}  select label="PWD" name="is_pwd" value={editData.is_pwd} onChange={handleEditChange} fullWidth>
                   <MenuItem value={1}>Yes</MenuItem>
                   <MenuItem value={0}>No</MenuItem>
                 </TextField>
               </Grid>
-              <Grid item xs={12} md={8}>
-                <TextField
-                  label="Precint No"
-                  name="precint_no"
-                  value={editData.precint_no || ''}
-                  onChange={handleEditChange}
-                  fullWidth
-                />
+
+              <Grid item xs={12} md={4}>
+                <TextField sx={{width: "223px", height: "55px"}}  label="Work" name="work" value={editData.work || ""} onChange={handleEditChange} fullWidth />
               </Grid>
-              <Grid item xs={12} md={3}>
-                <Typography>Contact In case of Emergency</Typography>
-                <Box sx={{ display: "flex", alignItems: "center", gap: "1rem", marginTop: "1rem" }}>
-                  <TextField
-                    label="Full Name"
-                    name="fullname_emergency"
-                    value={editData.fullname_emergency}
-                    onChange={handleEditChange}
-                    fullWidth
-                  />
-                  <TextField
-                    label="Contact No."
-                    name="contact_no_emergency"
-                    value={editData.contact_no_emergency}
-                    onChange={handleEditChange}
-                    fullWidth
-                  />
-                </Box>
+
+              <Grid item xs={12} md={4}>
+                <TextField sx={{width: "223px", height: "55px"}} select label="Monthly Income" name="monthly_income" value={editData.monthly_income || ""} onChange={handleEditChange} fullWidth>
+                  <MenuItem value="0">Less than 5,000</MenuItem>
+                  <MenuItem value="1">5,000 – 10,000</MenuItem>
+                  <MenuItem value="2">10,000 – 20,000</MenuItem>
+                  <MenuItem value="3">20,000 – 30,000</MenuItem>
+                  <MenuItem value="4">30,000 – 40,000</MenuItem>
+                  <MenuItem value="5">40,000 – 50,000</MenuItem>
+                  <MenuItem value="6">More than 50,000</MenuItem>
+                </TextField>
               </Grid>
-              <Grid item xs={12} md={3}>
-                <TextField
-                  select
-                  label="Residents/Non-Residents Status"
-                  name="status"
-                  style={{ width: "150px" }}
-                  value={editData.status}
-                  onChange={handleEditChange}
-                  fullWidth
-                >
+
+              <Grid item xs={12} md={4}>
+                <TextField sx={{width: "223px", height: "55px"}}  label="Contact No" name="contact_no" value={editData.contact_no || ""} onChange={handleEditChange} fullWidth />
+              </Grid>
+
+              {/* ADDRESS */}
+              <Grid item xs={12} md={6}>
+                <TextField sx={{width: "223px", height: "55px"}}  label="Purok" name="purok" value={editData.purok || ""} onChange={handleEditChange} fullWidth />
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <TextField sx={{width: "223px", height: "55px"}}  label="Address" name="address" value={editData.address || ""} onChange={handleEditChange} fullWidth />
+              </Grid>
+
+              {/* VOTER INFO */}
+              <Grid item xs={12} md={4}>
+                <TextField sx={{width: "223px", height: "55px"}}  select label="Registered Voter" name="is_voters" value={editData.is_voters} onChange={handleEditChange} fullWidth>
+                  <MenuItem value={1}>Yes</MenuItem>
+                  <MenuItem value={0}>No</MenuItem>
+                </TextField>
+              </Grid>
+
+              <Grid item xs={12} md={4}>
+                <TextField sx={{width: "223px", height: "55px"}}  label="Precinct No" name="precint_no" value={editData.precint_no || ""} onChange={handleEditChange} fullWidth />
+              </Grid>
+
+              <Grid item xs={12} md={4}>
+                <TextField sx={{width: "223px", height: "55px"}}  label="Living in Barangay" name="living" value={editData.living || ""} onChange={handleEditChange} fullWidth />
+              </Grid>
+
+              {/* EMERGENCY CONTACT */}
+              <Grid item xs={12}>
+                <Typography fontWeight={600} mb={2}>
+                  Emergency Contact
+                </Typography>
+                <Grid container spacing={3}>
+                  <Grid item xs={12} md={6}>
+                    <TextField sx={{width: "223px", height: "55px"}}  label="Full Name" name="fullname_emergency" value={editData.fullname_emergency} onChange={handleEditChange} fullWidth />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <TextField sx={{width: "223px", height: "55px"}}  label="Contact No" name="contact_no_emergency" value={editData.contact_no_emergency} onChange={handleEditChange} fullWidth />
+                  </Grid>
+                </Grid>
+              </Grid>
+
+              {/* STATUS */}
+              <Grid item xs={12} md={4}>
+                <TextField sx={{width: "223px", height: "55px"}}  select label="Resident Status" name="status" value={editData.status} onChange={handleEditChange} fullWidth>
                   <MenuItem value={1}>Alive</MenuItem>
                   <MenuItem value={0}>Deceased</MenuItem>
                 </TextField>
               </Grid>
+
             </Grid>
           )}
         </DialogContent>
+
         <DialogActions>
           <Button onClick={handleEditClose}>Cancel</Button>
-          <Button
-            onClick={handleEditSave}
-            variant="contained"
-            disabled={updating}
-          >
-            {updating ? 'Saving...' : 'Save'}
+          <Button onClick={handleEditSave} variant="contained" disabled={updating}>
+            {updating ? "Saving..." : "Save"}
           </Button>
         </DialogActions>
       </Dialog>
+
       <Dialog open={!!preview} onClose={() => setPreview(null)} maxWidth="md">
         <DialogTitle
           sx={{
